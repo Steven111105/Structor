@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - CPU
+  - TrashCan
   layers:
   - Default
   - TransparentFX

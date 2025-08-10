@@ -12,7 +12,6 @@ public interface IBeamReceiver
 public interface IGridItem
 {
     Vector2Int GridPosition { get; set; }
-    Vector2Int Size { get; }
     CardData CardData { get; }
     bool CanRotate { get; }
 }

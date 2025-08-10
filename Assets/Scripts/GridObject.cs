@@ -5,7 +5,11 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     [Header("Grid Object Settings")]
     public CardData cardData;
     public Vector2Int gridPosition;
-    public Direction inputDirection = Direction.South; // Which direction this wire accepts input from
+    public Direction inputDirection = Direction.South;
+    
+    [Header("Runtime Booster Effects")]
+    public float damageBoostMultiplier = 1f; // Applied on top of cardData.damageMultiplier
+    public bool isBoosted = false;
     
     private GridManager gridManager;
     
@@ -16,7 +20,6 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         set => gridPosition = value; 
     }
     
-    public Vector2Int Size => cardData?.size ?? Vector2Int.one;
     public CardData CardData => cardData;
     public bool CanRotate => cardData?.canRotate ?? true;
     
@@ -81,7 +84,13 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     
     protected virtual void ProcessBeam(float damage, Direction incomingDirection)
     {
-        if (cardData == null) return;
+        if (cardData == null) 
+        {
+            Debug.Log($"[{name}] REJECTED beam {damage} from {incomingDirection} - no cardData");
+            return;
+        }
+        
+        Debug.Log($"[{name}] RECEIVED beam {damage} from {incomingDirection}, type: {cardData.cardType}");
         
         switch (cardData.cardType)
         {
@@ -109,27 +118,48 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     void ProcessStraightWire(float damage, Direction incomingDirection)
     {
         Direction outputDirection = GetStraightWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1)) // Check for invalid direction
+        if (outputDirection != (Direction)(-1))
         {
-            PassBeamToNeighbor(damage, outputDirection);
+            Debug.Log($"[{name}] ACCEPTED straight wire: {incomingDirection} → {outputDirection}");
+            // Apply booster effects if this wire is boosted
+            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            PassBeamToNeighbor(finalDamage, outputDirection);
+        }
+        else
+        {
+            Debug.Log($"[{name}] REJECTED straight wire: {incomingDirection} (wrong direction for current orientation)");
         }
     }
     
     void ProcessLeftBendWire(float damage, Direction incomingDirection)
     {
         Direction outputDirection = GetLeftBendWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1)) // Check for invalid direction
+        if (outputDirection != (Direction)(-1))
         {
-            PassBeamToNeighbor(damage, outputDirection);
+            Debug.Log($"[{name}] ACCEPTED left bend: {incomingDirection} → {outputDirection}");
+            // Apply booster effects if this wire is boosted
+            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            PassBeamToNeighbor(finalDamage, outputDirection);
+        }
+        else
+        {
+            Debug.Log($"[{name}] REJECTED left bend: {incomingDirection} (wrong direction for current orientation)");
         }
     }
     
     void ProcessRightBendWire(float damage, Direction incomingDirection)
     {
         Direction outputDirection = GetRightBendWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1)) // Check for invalid direction
+        if (outputDirection != (Direction)(-1))
         {
-            PassBeamToNeighbor(damage, outputDirection);
+            Debug.Log($"[{name}] ACCEPTED right bend: {incomingDirection} → {outputDirection}");
+            // Apply booster effects if this wire is boosted
+            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            PassBeamToNeighbor(finalDamage, outputDirection);
+        }
+        else
+        {
+            Debug.Log($"[{name}] REJECTED right bend: {incomingDirection} (wrong direction for current orientation)");
         }
     }
     
@@ -149,7 +179,10 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     {
         if (incomingDirection != inputDirection) return;
         
-        float boostedDamage = damage * cardData.damageMultiplier;
+        // Apply both the CardData multiplier AND the runtime booster multiplier
+        float totalMultiplier = cardData.damageMultiplier * damageBoostMultiplier;
+        float boostedDamage = damage * totalMultiplier;
+        
         gridManager.OnBeamProcessed?.Invoke(boostedDamage);
         
         Direction outputDirection = (Direction)(((int)inputDirection + 2) % 4);
@@ -158,7 +191,10 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     
     void ProcessSensor(float damage, Direction incomingDirection)
     {
+        Debug.Log($"[{name}] SENSOR HIT! Received {damage} damage from {incomingDirection}");
+        
         int contribution = Mathf.RoundToInt(damage * cardData.sensorValue);
+        Debug.Log($"[{name}] Sensor contribution: {damage} × {cardData.sensorValue} = {contribution}");
         gridManager.OnSensorHit?.Invoke(contribution, gridPosition);
     }
     

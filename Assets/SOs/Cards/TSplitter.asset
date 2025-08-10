@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b26d368748c05f742af26f7ce022866a, type: 3}
-  m_Name: RightBendWire
+  m_Name: TSplitter
   m_EditorClassIdentifier: 
-  cardName: Right Bend Wire
-  cardType: 2
-  size: {x: 1, y: 1}
-  cardSprite: {fileID: 0}
-  prefab: {fileID: 0}
-  damageMultiplier: 1
-  sensorValue: 10
+  cardName: T-Splitter
+  cardType: 3
+  cardSprite: {fileID: 1034613429, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
   canRotate: 1
+  sensorValue: 10
+  damageMultiplier: 1
+  isAdditiveBoost: 0

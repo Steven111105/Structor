@@ -76,12 +76,14 @@ public class GridManager : MonoBehaviour
         cpuObj.transform.position = GridToWorldPosition(cpuPosition);
         cpuObj.transform.SetParent(transform); // Make it a child of GridManager
         
+        // Scale CPU to match cell size like everything else
+        cpuObj.transform.localScale = Vector3.one * cellSize;
+        
         // Add 2D visual representation
         SpriteRenderer spriteRenderer = cpuObj.AddComponent<SpriteRenderer>();
         spriteRenderer.sprite = CreateCPUSprite();
         spriteRenderer.color = Color.yellow;
         spriteRenderer.sortingOrder = 3; // Higher than other objects
-        spriteRenderer.transform.localScale = Vector3.one * 1.2f; // Make it bigger than other objects
         
         // Add a tag for identification
         cpuObj.tag = "CPU";
@@ -167,7 +169,7 @@ public class GridManager : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[CPU] No target found at {targetPos}");
+                // Debug.Log($"[CPU] No target found at {targetPos}");
             }
         }
         else
@@ -188,6 +190,15 @@ public class GridManager : MonoBehaviour
             return grid[neighborPos.x, neighborPos.y];
         }
         
+        return null;
+    }
+    
+    public GridObject GetGridObject(Vector2Int position)
+    {
+        if (IsValidPosition(position))
+        {
+            return grid[position.x, position.y] as GridObject;
+        }
         return null;
     }
     
@@ -214,30 +225,16 @@ public class GridManager : MonoBehaviour
                position.y >= 0 && position.y < gridHeight;
     }
     
-    public bool PlaceObject(Vector2Int position, IBeamReceiver obj, Vector2Int size)
+    public bool PlaceObject(Vector2Int position, IBeamReceiver obj)
     {
-        // Check if placement is valid (all cells empty)
-        for (int x = 0; x < size.x; x++)
+        // Check if placement is valid (cell is empty)
+        if (!IsValidPosition(position) || grid[position.x, position.y] != null)
         {
-            for (int y = 0; y < size.y; y++)
-            {
-                Vector2Int checkPos = new Vector2Int(position.x + x, position.y + y);
-                if (!IsValidPosition(checkPos) || grid[checkPos.x, checkPos.y] != null)
-                {
-                    return false; // Can't place here
-                }
-            }
+            return false; // Can't place here
         }
         
-        // Place the object in all required cells
-        for (int x = 0; x < size.x; x++)
-        {
-            for (int y = 0; y < size.y; y++)
-            {
-                Vector2Int placePos = new Vector2Int(position.x + x, position.y + y);
-                grid[placePos.x, placePos.y] = obj;
-            }
-        }
+        // Place the object in the single cell
+        grid[position.x, position.y] = obj;
         
         // Assign sprite to the GridObject if it's a GridObject
         if (obj is GridObject gridObject)
@@ -342,13 +339,48 @@ public class GridManager : MonoBehaviour
         );
     }
     
+    public Vector2Int ScreenToGridPosition(Vector3 screenPos)
+    {
+        // Convert screen position (like mouse position) to grid coordinates
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
+        worldPos.z = 0; // Ensure we're working in 2D
+        return WorldToGridPosition(worldPos);
+    }
+    
     void Update()
     {
-        // Test beam firing with spacebar
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            FireBeams();
-        }
+        // Debug: Show grid position under mouse (remove this after testing)
+        // if (Input.GetMouseButtonDown(0))
+        // {
+        //     Vector2Int gridPos = ScreenToGridPosition(Input.mousePosition);
+        //     Vector3 worldPos = GridToWorldPosition(gridPos);
+        //     Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        //     mouseWorldPos.z = 0;
+            
+        //     Debug.Log($"Mouse clicked at:");
+        //     Debug.Log($"  Screen: {Input.mousePosition}");
+        //     Debug.Log($"  Mouse World: {mouseWorldPos}");
+        //     Debug.Log($"  Grid Position: {gridPos}");
+        //     Debug.Log($"  Grid World Position: {worldPos}");
+        //     Debug.Log($"  GridManager Position: {transform.position}");
+            
+        //     // Also show what's at that position
+        //     var gridObj = GetGridObject(gridPos);
+        //     if (gridObj != null)
+        //     {
+        //         Debug.Log($"  Found object: {gridObj.CardData.cardName} at {gridObj.transform.position}");
+        //     }
+        //     else
+        //     {
+        //         Debug.Log("  No object at this position");
+        //     }
+        // }
+        
+        // // Test beam firing with spacebar
+        // if (Input.GetKeyDown(KeyCode.Space))
+        // {
+        //     FireBeams();
+        // }
     }
     
     // Visual debugging - draw grid in scene view
@@ -380,13 +412,16 @@ public class GridManager : MonoBehaviour
     public GridObject CreateGridObject(string baseName, CardType cardType, Vector2Int position)
     {
         GameObject obj = new GameObject($"{baseName}_{position.x}_{position.y}");
+        
+        // Parent the object to the GridManager for organization
+        obj.transform.SetParent(transform);
+        
         GridObject gridObj = obj.AddComponent<GridObject>();
         
         // Create minimal CardData
         CardData testCard = ScriptableObject.CreateInstance<CardData>();
         testCard.cardName = baseName;
         testCard.cardType = cardType;
-        testCard.size = Vector2Int.one;
         testCard.canRotate = cardType != CardType.Sensor; // Sensors typically don't rotate
         
         // Set sensor-specific properties
@@ -401,14 +436,17 @@ public class GridManager : MonoBehaviour
         // Explicitly set input direction to South BEFORE any rotation/visual setup
         gridObj.inputDirection = Direction.South;
         
-        // Position in world
+        // Position in world - this already accounts for GridManager's position
         obj.transform.position = GridToWorldPosition(position);
         
+        // Scale the object to match the cell size
+        obj.transform.localScale = Vector3.one * cellSize;
+        
         // Add to grid - this will automatically handle sprite assignment
-        bool placed = PlaceObject(position, gridObj, Vector2Int.one);
+        bool placed = PlaceObject(position, gridObj);
         if (!placed)
         {
-            Debug.LogError($"Failed to place {baseName} at {position}!");
+            // Debug.LogError($"Failed to place {baseName} at {position}!");
             DestroyImmediate(obj);
             return null;
         }

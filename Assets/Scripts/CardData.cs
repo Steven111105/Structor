@@ -6,14 +6,17 @@ public class CardData : ScriptableObject
     [Header("Card Info")]
     public string cardName;
     public CardType cardType;
-    public Vector2Int size = Vector2Int.one;
     
     [Header("Visuals")]
     public Sprite cardSprite;
-    public GameObject prefab;
     
     [Header("Gameplay")]
-    public float damageMultiplier = 1f; // For boosters
-    public int sensorValue = 10; // For sensors
     public bool canRotate = true; // Some items might be fixed orientation
+    
+    [Header("Sensor Settings")]
+    public int sensorValue = 10; // For sensors only
+    
+    [Header("Booster Settings")]
+    public float damageMultiplier = 2f; // For boosters only: 1.5f = +50%, 2.0f = x2 damage
+    public bool isAdditiveBoost = false; // For boosters only: true = +X damage, false = xX multiplier
 }
