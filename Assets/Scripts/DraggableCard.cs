@@ -20,12 +20,23 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     void Start()
     {
-        canvas = GetComponentInParent<Canvas>();
-        canvasGroup = GetComponent<CanvasGroup>();
-        rectTransform = GetComponent<RectTransform>();
-        gridManager = FindObjectOfType<GridManager>();
-        cardManager = FindObjectOfType<CardManager>();
-        gameManager = FindObjectOfType<GameManager>();
+        InitializeComponents();
+    }
+    
+    void InitializeComponents()
+    {
+        if (canvas == null)
+            canvas = GetComponentInParent<Canvas>();
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+        if (gridManager == null)
+            gridManager = FindObjectOfType<GridManager>();
+        if (cardManager == null)
+            cardManager = FindObjectOfType<CardManager>();
+        if (gameManager == null)
+            gameManager = FindObjectOfType<GameManager>();
 
         if (canvasGroup == null)
         {
@@ -44,20 +55,84 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     
     public void OnBeginDrag(PointerEventData eventData)
     {
-        startPosition = rectTransform.anchoredPosition;
-        canvasGroup.alpha = 0.6f;
-        canvasGroup.blocksRaycasts = false;
+        // Ensure components are initialized
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+            
+        if (rectTransform != null)
+        {
+            startPosition = rectTransform.anchoredPosition;
+        }
+        
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0.6f;
+            canvasGroup.blocksRaycasts = false;
+        }
+        else
+        {
+            Debug.LogError($"Missing CanvasGroup component on {gameObject.name}");
+        }
+        
+        // Notify hover effect that dragging started
+        CardHoverEffect hoverEffect = GetComponent<CardHoverEffect>();
+        if (hoverEffect != null)
+        {
+            hoverEffect.OnDragStart();
+        }
     }
     
     public void OnDrag(PointerEventData eventData)
     {
+        // Ensure components are initialized
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+        if (canvas == null)
+            canvas = GetComponentInParent<Canvas>();
+            
+        // Add detailed error checking
+        if (rectTransform == null)
+        {
+            Debug.LogError($"RectTransform is null on {gameObject.name}");
+            return;
+        }
+        
+        if (canvas == null)
+        {
+            Debug.LogError($"Canvas is null on {gameObject.name} - card may not be properly parented to UI Canvas");
+            return;
+        }
+        
+        if (eventData == null)
+        {
+            Debug.LogError($"PointerEventData is null");
+            return;
+        }
+        
+        // Perform the drag operation
         rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
     }
     
     public void OnEndDrag(PointerEventData eventData)
     {
-        canvasGroup.alpha = 1f;
-        canvasGroup.blocksRaycasts = true;
+        // Ensure components are initialized
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+            
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = true;
+        }
+        
+        // Notify hover effect that dragging ended
+        CardHoverEffect hoverEffect = GetComponent<CardHoverEffect>();
+        if (hoverEffect != null)
+        {
+            hoverEffect.OnDragEnd();
+        }
         
         // Check if dropped on trash can first
         if (CheckDroppedOnTrashCan(eventData.position))
@@ -117,6 +192,9 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         // Don't use discard or refill hand yet - wait for trash can button click
         
         Debug.Log($"{cardData.cardName} dragged to trash - card removed (discard pending)");
+        
+        // Trigger repositioning of remaining cards before destroying this one
+        TriggerHandRepositioning();
         
         // Destroy the card immediately
         Destroy(gameObject);
@@ -182,6 +260,9 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             cardManager.currentHandSize--;
         }
         
+        // Trigger repositioning of remaining cards before destroying this one
+        TriggerHandRepositioning();
+        
         // Remove this card from hand
         Destroy(gameObject);
         
@@ -221,6 +302,50 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         // Could also add a particle system or other effects here
     }
     
+    /// <summary>
+    /// Triggers repositioning of remaining cards in hand after this card is removed
+    /// </summary>
+    void TriggerHandRepositioning()
+    {
+        Debug.Log($"TriggerHandRepositioning called for card {gameObject.name}");
+        
+        // Find the CardAnimationManager to trigger repositioning
+        CardAnimationManager animationManager = FindObjectOfType<CardAnimationManager>();
+        if (animationManager != null)
+        {
+            Debug.Log("Found CardAnimationManager, removing card and repositioning");
+            
+            // Remove this card from the animation manager's tracking before repositioning
+            animationManager.RemoveCard(gameObject, false); // Don't animate removal since we're destroying it
+            
+            // Use the animation manager to start the coroutine since this card will be destroyed
+            animationManager.StartCoroutine(DelayedRepositioning(animationManager));
+        }
+        else
+        {
+            Debug.LogError("CardAnimationManager not found! Cannot reposition cards.");
+        }
+    }
+    
+    /// <summary>
+    /// Delays repositioning slightly to ensure this card is fully removed first
+    /// </summary>
+    System.Collections.IEnumerator DelayedRepositioning(CardAnimationManager animationManager)
+    {
+        Debug.Log("DelayedRepositioning coroutine started");
+        yield return new WaitForEndOfFrame(); // Wait one frame for destroy to process
+        
+        if (animationManager != null)
+        {
+            Debug.Log("Calling RepositionAllCards");
+            animationManager.RepositionAllCards();
+        }
+        else
+        {
+            Debug.LogError("AnimationManager became null in DelayedRepositioning");
+        }
+    }
+    
     bool PlaceRegularTile(Vector2Int gridPosition)
     {
         // Create the grid object using GridManager's method
@@ -228,11 +353,16 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         
         if (gridObject != null)
         {
+            Debug.Log($"PlaceRegularTile successful for {cardData.cardName}");
+            
             // Update hand size counter
             if (cardManager != null)
             {
                 cardManager.currentHandSize--;
             }
+            
+            // Trigger repositioning of remaining cards before destroying this one
+            TriggerHandRepositioning();
             
             // Remove this card from hand
             Destroy(gameObject);

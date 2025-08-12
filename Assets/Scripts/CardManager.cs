@@ -228,6 +228,9 @@ public class CardManager : MonoBehaviour
         currentHandSize = cardHandParent.childCount;
         Debug.Log($"[CardManager] Current hand size: {currentHandSize}, target: {maxHandSize}");
         
+        // Collect cards to draw for batch animation
+        List<CardData> cardsToCreate = new List<CardData>();
+        
         // Add cards until we reach max hand size or run out of cards
         while (currentHandSize < maxHandSize && runtimeDeck.Count > 0)
         {
@@ -236,9 +239,9 @@ public class CardManager : MonoBehaviour
             
             if (drawnCard != null)
             {
-                CreateCard(drawnCard);
+                cardsToCreate.Add(drawnCard);
                 currentHandSize++;
-                Debug.Log($"[CardManager] Created card: {drawnCard.cardName}, hand size now: {currentHandSize}");
+                Debug.Log($"[CardManager] Prepared card: {drawnCard.cardName}, hand size will be: {currentHandSize}");
             }
             else
             {
@@ -247,7 +250,73 @@ public class CardManager : MonoBehaviour
             }
         }
         
+        // Create and animate cards one by one if animation manager is available
+        var animationManager = FindObjectOfType<CardAnimationManager>();
+        if (animationManager != null && cardsToCreate.Count > 0)
+        {
+            List<GameObject> newCards = new List<GameObject>();
+            
+            // Create cards but don't position them yet - let animation manager handle it
+            foreach (var cardData in cardsToCreate)
+            {
+                GameObject newCard = CreateCardForAnimation(cardData);
+                newCards.Add(newCard);
+            }
+            
+            animationManager.DrawMultipleCards(newCards);
+        }
+        else
+        {
+            // Fallback: create cards normally if no animation manager
+            foreach (var cardData in cardsToCreate)
+            {
+                CreateCard(cardData);
+            }
+        }
+        
         Debug.Log($"[CardManager] Hand refilled to {currentHandSize}/{maxHandSize} cards. {runtimeDeck.Count} cards remaining in deck.");
+    }
+    
+    GameObject CreateCardForAnimation(CardData cardData)
+    {
+        // Instantiate the card prefab but don't let it auto-position
+        GameObject newCard = Instantiate(cardPrefab);
+        
+        // Don't parent it yet - the animation manager will handle positioning
+        // We'll parent it properly when the animation starts
+        
+        // Ensure required components exist
+        if (newCard.GetComponent<CanvasGroup>() == null)
+        {
+            newCard.AddComponent<CanvasGroup>();
+            Debug.Log($"Added missing CanvasGroup to card {newCard.name}");
+        }
+        
+        // Add CardHoverEffect component if missing
+        if (newCard.GetComponent<CardHoverEffect>() == null)
+        {
+            newCard.AddComponent<CardHoverEffect>();
+            Debug.Log($"Added CardHoverEffect to card {newCard.name}");
+        }
+        
+        // Set up the DraggableCard component
+        DraggableCard draggableCard = newCard.GetComponent<DraggableCard>();
+        if (draggableCard != null)
+        {
+            draggableCard.cardData = cardData;
+        }
+        
+        // Update visual elements
+        UpdateCardVisuals(newCard, cardData);
+        
+        // Make sure it starts hidden/small
+        RectTransform cardRect = newCard.GetComponent<RectTransform>();
+        if (cardRect != null)
+        {
+            cardRect.localScale = Vector3.zero;
+        }
+        
+        return newCard;
     }
     
     CardData DrawCardFromDeck()
@@ -396,6 +465,13 @@ public class CardManager : MonoBehaviour
         // Update visual elements
         UpdateCardVisuals(newCard, cardData);
         
+        // Use animation manager if available
+        var animationManager = FindObjectOfType<CardAnimationManager>();
+        if (animationManager != null)
+        {
+            animationManager.DrawCard(newCard, true);
+        }
+        
         return newCard;
     }
     
@@ -446,10 +522,19 @@ public class CardManager : MonoBehaviour
     // Call this to remove all cards and reset the hand
     public void ClearHand()
     {
+        // Use animation manager if available
+        var animationManager = FindObjectOfType<CardAnimationManager>();
+        if (animationManager != null)
+        {
+            animationManager.ClearHand();
+        }
+        
         foreach (Transform child in cardHandParent)
         {
             Destroy(child.gameObject);
         }
+        
+        currentHandSize = 0;
     }
     
     // Call this to refill the hand with available cards

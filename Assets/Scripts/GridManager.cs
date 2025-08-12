@@ -227,10 +227,23 @@ public class GridManager : MonoBehaviour
     
     public bool PlaceObject(Vector2Int position, IBeamReceiver obj)
     {
-        // Check if placement is valid (cell is empty)
-        if (!IsValidPosition(position) || grid[position.x, position.y] != null)
+        // Check if position is within grid bounds
+        if (!IsValidPosition(position))
         {
-            return false; // Can't place here
+            return false;
+        }
+        
+        // Check if position is already occupied
+        if (grid[position.x, position.y] != null)
+        {
+            return false;
+        }
+        
+        // Check if trying to place at CPU position (blocked for player objects)
+        if (position == cpuPosition)
+        {
+            Debug.Log($"Cannot place object at CPU position {cpuPosition}");
+            return false;
         }
         
         // Place the object in the single cell
