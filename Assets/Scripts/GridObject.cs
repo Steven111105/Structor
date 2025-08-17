@@ -8,7 +8,8 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     public Direction inputDirection = Direction.South;
     
     [Header("Runtime Booster Effects")]
-    public float damageBoostMultiplier = 1f; // Applied on top of cardData.damageMultiplier
+    public float damageMultiplier = 1f;
+    public float damageAddition = 0f;
     public bool isBoosted = false;
     
     private GridManager gridManager;
@@ -122,7 +123,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         {
             Debug.Log($"[{name}] ACCEPTED straight wire: {incomingDirection} → {outputDirection}");
             // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
             PassBeamToNeighbor(finalDamage, outputDirection);
         }
         else
@@ -138,7 +139,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         {
             Debug.Log($"[{name}] ACCEPTED left bend: {incomingDirection} → {outputDirection}");
             // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
             PassBeamToNeighbor(finalDamage, outputDirection);
         }
         else
@@ -154,7 +155,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         {
             Debug.Log($"[{name}] ACCEPTED right bend: {incomingDirection} → {outputDirection}");
             // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted ? damage * damageBoostMultiplier : damage;
+            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
             PassBeamToNeighbor(finalDamage, outputDirection);
         }
         else
@@ -180,7 +181,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         if (incomingDirection != inputDirection) return;
         
         // Apply both the CardData multiplier AND the runtime booster multiplier
-        float totalMultiplier = cardData.damageMultiplier * damageBoostMultiplier;
+        float totalMultiplier = cardData.damageMultiplier * damageMultiplier;
         float boostedDamage = damage * totalMultiplier;
         
         gridManager.OnBeamProcessed?.Invoke(boostedDamage);
@@ -193,8 +194,8 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     {
         Debug.Log($"[{name}] SENSOR HIT! Received {damage} damage from {incomingDirection}");
         
-        int contribution = Mathf.RoundToInt(damage * cardData.sensorValue);
-        Debug.Log($"[{name}] Sensor contribution: {damage} × {cardData.sensorValue} = {contribution}");
+        int contribution = Mathf.RoundToInt(damage);
+        Debug.Log($"[{name}] Sensor contribution: {damage} = {contribution}");
         gridManager.OnSensorHit?.Invoke(contribution, gridPosition);
     }
     

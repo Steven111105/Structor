@@ -86,7 +86,6 @@ public class CardAnimationSetup : MonoBehaviour
             animationManager.handWidth = 600f; // Reduced from 800f for better card spacing
             animationManager.cardSpacing = 100f; // Reduced from 120f
             animationManager.maxCardOverlap = 60f; // Increased from 50f
-            animationManager.cardArcHeight = 15f; // Reduced from 20f
         }
         
         // Disable layout groups on card hand parent

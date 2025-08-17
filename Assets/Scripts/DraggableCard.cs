@@ -13,7 +13,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     private Canvas canvas;
     private CanvasGroup canvasGroup;
     private RectTransform rectTransform;
-    private Vector3 startPosition;
+    [SerializeField] private Vector3 startPosition;
     private GridManager gridManager;
     private CardManager cardManager;
     private GameManager gameManager;
@@ -60,7 +60,15 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             rectTransform = GetComponent<RectTransform>();
         if (canvasGroup == null)
             canvasGroup = GetComponent<CanvasGroup>();
-            
+        
+        // Notify hover effect that dragging started FIRST
+        CardHoverEffect hoverEffect = GetComponent<CardHoverEffect>();
+        if (hoverEffect != null)
+        {
+            hoverEffect.OnDragStart();
+        }
+        
+        // THEN set start position after hover effect has normalized the card position
         if (rectTransform != null)
         {
             startPosition = rectTransform.anchoredPosition;
@@ -74,13 +82,6 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         else
         {
             Debug.LogError($"Missing CanvasGroup component on {gameObject.name}");
-        }
-        
-        // Notify hover effect that dragging started
-        CardHoverEffect hoverEffect = GetComponent<CardHoverEffect>();
-        if (hoverEffect != null)
-        {
-            hoverEffect.OnDragStart();
         }
     }
     
@@ -161,10 +162,10 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         if (trashCan == null)
         {
             // Fallback: find by name
+            Debug.LogError("No trashcan found");
             trashCan = GameObject.Find("TrashCan");
         }
         
-        if (trashCan == null) return false;
         
         // Check if the screen position is over the trash can
         RectTransform trashRect = trashCan.GetComponent<RectTransform>();
@@ -250,6 +251,12 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             Debug.Log("Cannot apply booster to sensors");
             return false;
         }
+
+        if (existingWire.isBoosted)
+        {
+            Debug.Log("Wire already boosted");
+            return false;
+        }
         
         // Apply the booster effect
         ApplyBoosterToWire(existingWire);
@@ -266,22 +273,24 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         // Remove this card from hand
         Destroy(gameObject);
         
-        Debug.Log($"Applied {cardData.cardName} booster to wire at {gridPosition}");
+        // Debug.Log($"Applied {cardData.cardName} booster to wire at {gridPosition}");
         return true;
     }
     
     void ApplyBoosterToWire(GridObject wire)
     {
         // Don't modify the ScriptableObject! Store booster effects on the GridObject instead
-        if (cardData.isAdditiveBoost)
+        if (cardData.isMult)
         {
-            // Additive: +X damage (e.g., +2 damage)
-            wire.damageBoostMultiplier += cardData.damageMultiplier - 1f;
+            // Multiplicative: xX damage (e.g., x2 damage)
+            wire.damageAddition *= cardData.damageAddition;
+            Debug.Log($"Set damageAddition to {wire.damageAddition}");
         }
         else
         {
-            // Multiplicative: xX damage (e.g., x2 damage)
-            wire.damageBoostMultiplier *= cardData.damageMultiplier;
+            // Additive: +X damage (e.g., +2 damage)
+            wire.damageMultiplier = cardData.damageMultiplier;
+            Debug.Log($"Set damageMultiplier to {wire.damageMultiplier}");
         }
         
         wire.isBoosted = true;

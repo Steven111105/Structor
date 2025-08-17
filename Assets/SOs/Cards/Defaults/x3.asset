@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b26d368748c05f742af26f7ce022866a, type: 3}
-  m_Name: TSplitter
+  m_Name: x3
   m_EditorClassIdentifier: 
-  cardName: T-Splitter
-  cardType: 3
-  cardSprite: {fileID: 1034613429, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
-  canRotate: 1
-  sensorValue: 10
-  damageMultiplier: 1
-  isAdditiveBoost: 0
+  cardName: Damage Booster
+  cardType: 4
+  cardSprite: {fileID: 0}
+  canRotate: 0
+  sensorValue: 0
+  damageMultiplier: 3
+  damageAddition: 0
+  isMult: 1

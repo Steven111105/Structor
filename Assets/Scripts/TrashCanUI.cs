@@ -15,12 +15,14 @@ public class TrashCanUI : MonoBehaviour
     
     private CardManager cardManager;
     private GameManager gameManager;
+    private CardAnimationManager cardAnimationManager;
     private Image buttonImage;
     
     void Start()
     {
         cardManager = FindObjectOfType<CardManager>();
         gameManager = FindObjectOfType<GameManager>();
+        cardAnimationManager = FindObjectOfType<CardAnimationManager>();
         buttonImage = GetComponent<Image>();
         
         if (trashCanButton == null)
@@ -49,6 +51,8 @@ public class TrashCanUI : MonoBehaviour
         if (cardManager == null || buttonImage == null) return;
         
         bool hasPending = cardManager.hasPendingDiscards;
+        bool isAnimating = cardAnimationManager != null && 
+                          (cardAnimationManager.IsAnimating() || cardAnimationManager.IsRepositioning());
         
         // Update text if available
         if (markedCountText != null)
@@ -64,8 +68,18 @@ public class TrashCanUI : MonoBehaviour
             }
         }
         
+        // Update button interactability - disable if animating
+        if (trashCanButton != null)
+        {
+            trashCanButton.interactable = !isAnimating;
+        }
+        
         // Update button color based on state
-        if (hasPending)
+        if (isAnimating)
+        {
+            buttonImage.color = Color.gray; // Gray when disabled
+        }
+        else if (hasPending)
         {
             buttonImage.color = confirmColor; // Red when ready to confirm
         }

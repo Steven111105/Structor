@@ -47,15 +47,12 @@ public class CardManager : MonoBehaviour
             currentDeckComposition = new List<CardData>(runtimeDeck);
             
             originalDeckSize = runtimeDeck.Count;
-            Debug.Log($"Runtime deck initialized with {runtimeDeck.Count} cards");
-            Debug.Log($"Deck composition:\n{deckConfig.GetDeckSummary()}");
+            // Debug.Log($"Runtime deck initialized with {runtimeDeck.Count} cards");
+            // Debug.Log($"Deck composition:\n{deckConfig.GetDeckSummary()}");
         }
         else
         {
             Debug.Log("No deck configuration found, creating default deck...");
-            originalDeckConfig = null; // No SO config
-            CreateDefaultDeck();
-            originalDeckSize = runtimeDeck.Count;
         }
         
         currentDeckSize = runtimeDeck.Count;
@@ -75,7 +72,7 @@ public class CardManager : MonoBehaviour
             runtimeDeck[randomIndex] = temp;
         }
         
-        Debug.Log($"Deck shuffled - {runtimeDeck.Count} cards total");
+        // Debug.Log($"Deck shuffled - {runtimeDeck.Count} cards total");
         currentDeckSize = runtimeDeck.Count;
     }
     
@@ -143,57 +140,6 @@ public class CardManager : MonoBehaviour
         }
     }
     
-    void CreateDefaultDeck()
-    {
-        Debug.Log("Creating default card deck...");
-        
-        // Create a basic deck programmatically and add to runtime deck
-        CardData[] defaultCards = new CardData[]
-        {
-            CreateCardData("Straight Wire", CardType.StraightWire),
-            CreateCardData("Straight Wire", CardType.StraightWire), // Add duplicates for higher chance
-            CreateCardData("Straight Wire", CardType.StraightWire),
-            CreateCardData("Left Bend Wire", CardType.LeftBendWire),
-            CreateCardData("Left Bend Wire", CardType.LeftBendWire),
-            CreateCardData("Right Bend Wire", CardType.RightBendWire),
-            CreateCardData("Right Bend Wire", CardType.RightBendWire),
-            CreateCardData("T-Splitter", CardType.TSplitter),
-            CreateCardData("Sensor", CardType.Sensor),
-            CreateCardData("Sensor", CardType.Sensor),
-            CreateCardData("Damage Booster", CardType.Booster)
-        };
-        
-        // Add to both runtime deck and current composition
-        foreach (var card in defaultCards)
-        {
-            runtimeDeck.Add(card);
-            currentDeckComposition.Add(card);
-        }
-        
-        Debug.Log($"Created default deck with {runtimeDeck.Count} cards");
-    }
-    
-    CardData CreateCardData(string cardName, CardType cardType)
-    {
-        CardData card = ScriptableObject.CreateInstance<CardData>();
-        card.cardName = cardName;
-        card.cardType = cardType;
-        card.canRotate = cardType != CardType.Sensor;
-        
-        // Set type-specific properties
-        switch (cardType)
-        {
-            case CardType.Sensor:
-                card.sensorValue = 25;
-                break;
-            case CardType.Booster:
-                card.damageMultiplier = 2f;
-                card.isAdditiveBoost = false;
-                break;
-        }
-        
-        return card;
-    }
     
     public void RefillHandToMaxSize(int maxHandSize)
     {
@@ -202,7 +148,7 @@ public class CardManager : MonoBehaviour
         // Ensure deck is initialized if this is called before Start()
         if (runtimeDeck.Count == 0 && (deckConfig != null || currentDeckComposition.Count == 0))
         {
-            Debug.Log("[CardManager] Deck not initialized yet, initializing now...");
+            // Debug.Log("[CardManager] Deck not initialized yet, initializing now...");
             InitializeDeck();
         }
         
@@ -226,7 +172,7 @@ public class CardManager : MonoBehaviour
         
         // Count current cards in hand
         currentHandSize = cardHandParent.childCount;
-        Debug.Log($"[CardManager] Current hand size: {currentHandSize}, target: {maxHandSize}");
+        // Debug.Log($"[CardManager] Current hand size: {currentHandSize}, target: {maxHandSize}");
         
         // Collect cards to draw for batch animation
         List<CardData> cardsToCreate = new List<CardData>();
@@ -241,7 +187,7 @@ public class CardManager : MonoBehaviour
             {
                 cardsToCreate.Add(drawnCard);
                 currentHandSize++;
-                Debug.Log($"[CardManager] Prepared card: {drawnCard.cardName}, hand size will be: {currentHandSize}");
+                // Debug.Log($"[CardManager] Prepared card: {drawnCard.cardName}, hand size will be: {currentHandSize}");
             }
             else
             {
@@ -274,7 +220,7 @@ public class CardManager : MonoBehaviour
             }
         }
         
-        Debug.Log($"[CardManager] Hand refilled to {currentHandSize}/{maxHandSize} cards. {runtimeDeck.Count} cards remaining in deck.");
+        // Debug.Log($"[CardManager] Hand refilled to {currentHandSize}/{maxHandSize} cards. {runtimeDeck.Count} cards remaining in deck.");
     }
     
     GameObject CreateCardForAnimation(CardData cardData)
@@ -289,14 +235,14 @@ public class CardManager : MonoBehaviour
         if (newCard.GetComponent<CanvasGroup>() == null)
         {
             newCard.AddComponent<CanvasGroup>();
-            Debug.Log($"Added missing CanvasGroup to card {newCard.name}");
+            // Debug.Log($"Added missing CanvasGroup to card {newCard.name}");
         }
         
         // Add CardHoverEffect component if missing
         if (newCard.GetComponent<CardHoverEffect>() == null)
         {
             newCard.AddComponent<CardHoverEffect>();
-            Debug.Log($"Added CardHoverEffect to card {newCard.name}");
+            // Debug.Log($"Added CardHoverEffect to card {newCard.name}");
         }
         
         // Set up the DraggableCard component

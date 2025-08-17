@@ -10,14 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b26d368748c05f742af26f7ce022866a, type: 3}
-  m_Name: AdditiveBooster
+  m_Name: +5
   m_EditorClassIdentifier: 
-  cardName: +3 Damage
+  cardName: Damage Booster
   cardType: 4
-  size: {x: 1, y: 1}
-  cardSprite: {fileID: 0}
-  prefab: {fileID: 0}
-  damageMultiplier: 4
-  sensorValue: 10
+  cardSprite: {fileID: -1266691279, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
   canRotate: 0
-  isAdditiveBoost: 1
+  sensorValue: 0
+  damageMultiplier: 5
+  damageAddition: 0
+  isMult: 0

@@ -15,8 +15,6 @@ public class CardAnimationManager : MonoBehaviour
     public float cardSpacing = 120f; // Spacing between cards
     [Range(0f, 100f)]
     public float maxCardOverlap = 50f; // Maximum overlap when hand is full
-    [Range(0f, 50f)]
-    public float cardArcHeight = 20f; // How much cards arc upward in center
     
     [Header("Animation Settings")]
     [Range(0.1f, 2f)]
@@ -35,6 +33,7 @@ public class CardAnimationManager : MonoBehaviour
     private List<GameObject> cardsInHand = new List<GameObject>();
     private bool isAnimating = false;
     private bool isDrawingCard = false; // Track individual card draw state
+    private bool isRepositioning = false; // Track repositioning state
     
     void Start()
     {
@@ -83,14 +82,14 @@ public class CardAnimationManager : MonoBehaviour
         if (animate)
         {
             isDrawingCard = true; // Mark that we're drawing a card
-            Debug.Log($"Starting card draw animation for {cardObject.name}. Current hand size: {cardsInHand.Count}");
+            // Debug.Log($"Starting card draw animation for {cardObject.name}. Current hand size: {cardsInHand.Count}");
             
             // Start from deck position
             if (deckPosition != null)
             {
                 // Use a simpler approach for deck position
                 cardRect.anchoredPosition = new Vector3(300f, 0f, 0f); // Right side start
-                Debug.Log($"Set {cardObject.name} start position to deck: {cardRect.anchoredPosition}");
+                // Debug.Log($"Set {cardObject.name} start position to deck: {cardRect.anchoredPosition}");
             }
             else
             {
@@ -163,12 +162,13 @@ public class CardAnimationManager : MonoBehaviour
     private IEnumerator DrawCardsSequentially(List<GameObject> cards)
     {
         isAnimating = true;
+        isRepositioning = true; // Block hover during staggered drawing
         
         for (int i = 0; i < cards.Count; i++)
         {
             if (cards[i] != null)
             {
-                Debug.Log($"Drawing card {i + 1}/{cards.Count}: {cards[i].name}");
+                // Debug.Log($"Drawing card {i + 1}/{cards.Count}: {cards[i].name}");
                 
                 // Start drawing this card
                 DrawCard(cards[i], true);
@@ -184,8 +184,26 @@ public class CardAnimationManager : MonoBehaviour
             }
         }
         
-        Debug.Log("Finished drawing all cards sequentially");
+        // Wait a bit longer to ensure all positioning is settled
+        yield return new WaitForSeconds(0.2f);
+        
+        // Update all hover effects with correct positions after all cards are drawn
+        for (int i = 0; i < cardsInHand.Count; i++)
+        {
+            if (cardsInHand[i] != null)
+            {
+                CardHoverEffect hoverEffect = cardsInHand[i].GetComponent<CardHoverEffect>();
+                if (hoverEffect != null)
+                {
+                    Vector3 correctPosition = CalculateCardPosition(i);
+                    hoverEffect.SetBasePosition(correctPosition);
+                }
+            }
+        }
+        
+        // Debug.Log("Finished drawing all cards sequentially");
         isAnimating = false;
+        isRepositioning = false; // Re-enable hover after all cards are properly positioned
     }
     
     private IEnumerator AnimateCardDraw(GameObject cardObject)
@@ -195,31 +213,23 @@ public class CardAnimationManager : MonoBehaviour
         
         // Store initial values
         Vector3 startPos = new Vector3(300f, 0f, 0f); // Start from right side (deck position)
-        if (deckPosition != null)
-        {
-            // Use a simple offset from the deck position
-            startPos = new Vector3(300f, 0f, 0f); // Keep consistent deck position
-        }
-        
         Vector3 startScale = Vector3.zero;
-        Quaternion startRot = Quaternion.Euler(0, 0, Random.Range(-drawRotationAmount, drawRotationAmount));
         
         // Calculate target values
         int targetIndex = cardsInHand.Count; // This card will be at this index when added
         int totalCardsAfterAdd = cardsInHand.Count + 1; // Total cards after this one is added
         Vector3 targetPos = CalculateCardPosition(targetIndex, totalCardsAfterAdd);
-        Quaternion targetRot = CalculateCardRotation(targetIndex);
         Vector3 targetScale = Vector3.one;
         
-        Debug.Log($"Card {cardObject.name} animating to index {targetIndex} of {totalCardsAfterAdd}, position {targetPos}");
+        // Debug.Log($"Card {cardObject.name} animating to index {targetIndex} of {totalCardsAfterAdd}, position {targetPos}");
         
         // Set initial state
         cardRect.anchoredPosition = startPos;
         cardRect.localScale = startScale;
-        cardRect.rotation = startRot;
+        cardRect.rotation = Quaternion.identity; // No rotation
         
         // Trigger repositioning immediately when card spawn starts
-        Debug.Log($"Card {cardObject.name} starting animation - triggering immediate reposition of existing cards");
+        // Debug.Log($"Card {cardObject.name} starting animation - triggering immediate reposition of existing cards");
         
         // Add this card to tracking list for position calculations
         cardsInHand.Add(cardObject);
@@ -229,32 +239,17 @@ public class CardAnimationManager : MonoBehaviour
 
         float elapsedTime = 0f;
         
-        // Animate the card draw
+        // Simple animation - just position and scale
         while (elapsedTime < drawAnimationDuration)
         {
             float normalizedTime = elapsedTime / drawAnimationDuration;
             
-            // Use easing curves for smooth animation
-            float easedTime = EaseOutQuart(normalizedTime);
-            float scaleTime = normalizedTime < 0.3f ? normalizedTime / 0.3f : (1f - normalizedTime) / 0.7f;
+            // Linear position movement
+            cardRect.anchoredPosition = Vector3.Lerp(startPos, targetPos, normalizedTime);
             
-            // Animate position
-            cardRect.anchoredPosition = Vector3.Lerp(startPos, targetPos, easedTime);
-            
-            // Animate rotation
-            cardRect.rotation = Quaternion.Lerp(startRot, targetRot, easedTime * 0.7f);
-            
-            // Animate scale with overshoot effect
-            Vector3 currentScale = Vector3.one;
-            if (normalizedTime < 0.3f)
-            {
-                currentScale = Vector3.Lerp(Vector3.zero, Vector3.one * drawScaleEffect, scaleTime);
-            }
-            else
-            {
-                currentScale = Vector3.Lerp(Vector3.one * drawScaleEffect, Vector3.one, (normalizedTime - 0.3f) / 0.7f);
-            }
-            cardRect.localScale = currentScale;
+            // Ease out scaling for smoother effect
+            float easedScale = EaseOutQuart(normalizedTime);
+            cardRect.localScale = Vector3.Lerp(startScale, targetScale, easedScale);
             
             elapsedTime += Time.deltaTime;
             yield return null;
@@ -262,39 +257,16 @@ public class CardAnimationManager : MonoBehaviour
         
         // Ensure final values are set
         cardRect.anchoredPosition = targetPos;
-        cardRect.rotation = targetRot;
-        cardRect.localScale = Vector3.one;
-        
-        // Add a small bounce effect
-        StartCoroutine(BounceEffect(cardRect));
+        cardRect.localScale = targetScale;
+        cardRect.rotation = Quaternion.identity;
         
         // Card is already in tracking list, no need to add again
         // Repositioning already happened at the start, no need to do it again
-        Debug.Log("Card animation complete - repositioning already handled at start");
+        // Debug.Log("Card animation complete - repositioning already handled at start");
         
         // Mark that this card's animation is complete
         isDrawingCard = false;
-        Debug.Log($"Card draw animation completed for {cardObject.name}");
-    }
-    
-    private IEnumerator BounceEffect(RectTransform cardRect)
-    {
-        Vector3 originalScale = cardRect.localScale;
-        float bounceAmount = 0.1f;
-        float bounceDuration = 0.2f;
-        float elapsedTime = 0f;
-        
-        while (elapsedTime < bounceDuration)
-        {
-            float normalizedTime = elapsedTime / bounceDuration;
-            float bounceScale = Mathf.Sin(normalizedTime * Mathf.PI * 2) * bounceAmount;
-            cardRect.localScale = originalScale + Vector3.one * bounceScale;
-            
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-        
-        cardRect.localScale = originalScale;
+        // Debug.Log($"Card draw animation completed for {cardObject.name}");
     }
     
     private void PositionCard(GameObject cardObject, int index, bool animate = true)
@@ -305,7 +277,7 @@ public class CardAnimationManager : MonoBehaviour
         Vector3 targetPos = CalculateCardPosition(index); // This will use current cardsInHand.Count which is correct here
         Quaternion targetRot = CalculateCardRotation(index);
         
-        Debug.Log($"Positioning card {cardObject.name} at index {index} to position {targetPos}");
+        // Debug.Log($"Positioning card {cardObject.name} at index {index} to position {targetPos}");
 
         if (animate)
         {
@@ -347,6 +319,12 @@ public class CardAnimationManager : MonoBehaviour
     {
         Debug.Log($"Repositioning all {cardsInHand.Count} cards");
         
+        isRepositioning = true;
+        StartCoroutine(RepositionCardsCoroutine());
+    }
+    
+    private IEnumerator RepositionCardsCoroutine()
+    {
         for (int i = 0; i < cardsInHand.Count; i++)
         {
             if (cardsInHand[i] != null)
@@ -354,6 +332,26 @@ public class CardAnimationManager : MonoBehaviour
                 PositionCard(cardsInHand[i], i, true);
             }
         }
+        
+        // Wait for repositioning animation to complete
+        yield return new WaitForSeconds(repositionDuration + 0.1f);
+        
+        // NOW update hover effect base positions after repositioning is complete
+        for (int i = 0; i < cardsInHand.Count; i++)
+        {
+            if (cardsInHand[i] != null)
+            {
+                CardHoverEffect hoverEffect = cardsInHand[i].GetComponent<CardHoverEffect>();
+                if (hoverEffect != null)
+                {
+                    // Force update to the correct final position
+                    Vector3 correctPosition = CalculateCardPosition(i);
+                    hoverEffect.SetBasePosition(correctPosition);
+                }
+            }
+        }
+        
+        isRepositioning = false;
     }
     
     /// <summary>
@@ -361,7 +359,7 @@ public class CardAnimationManager : MonoBehaviour
     /// </summary>
     private void RepositionExistingCards()
     {
-        Debug.Log($"Repositioning existing {cardsInHand.Count - 1} cards (excluding newest)");
+        // Debug.Log($"Repositioning existing {cardsInHand.Count - 1} cards (excluding newest)");
         
         // Reposition all cards except the last one (which is still animating)
         for (int i = 0; i < cardsInHand.Count - 1; i++)
@@ -378,13 +376,13 @@ public class CardAnimationManager : MonoBehaviour
         // Use provided total or default to current count
         float totalCards = totalCardCount >= 0 ? totalCardCount : cardsInHand.Count;
         
-        Debug.Log($"Calculating position for index {index} with {totalCards} total cards");
+        // Debug.Log($"Calculating position for index {index} with {totalCards} total cards");
         
         if (totalCards <= 1)
         {
-            // Single card should be at center with slight arc
-            Debug.Log($"Single card positioning: (0, {cardArcHeight * 0.5f}, 0)");
-            return new Vector3(0, cardArcHeight * 0.5f, 0);
+            // Single card should be at center
+            // Debug.Log($"Single card positioning: (0, 0, 0)");
+            return new Vector3(0, 0, 0);
         }
         
         // Calculate spacing based on hand width and number of cards
@@ -405,12 +403,9 @@ public class CardAnimationManager : MonoBehaviour
         // Calculate this card's X position relative to center
         float cardX = startX + (index * actualSpacing);
         
-        // Add arc effect (cards in center are slightly higher)
-        float normalizedPos = (float)index / (totalCards - 1);
-        float arcOffset = Mathf.Sin(normalizedPos * Mathf.PI) * cardArcHeight;
-        
-        Vector3 result = new Vector3(cardX, arcOffset, 0);
-        Debug.Log($"Card {index} position calculated: {result}");
+        // No arc effect - all cards at same Y level
+        Vector3 result = new Vector3(cardX, 0, 0);
+        // Debug.Log($"Card {index} position calculated: {result}");
         return result;
     }
     
@@ -427,6 +422,19 @@ public class CardAnimationManager : MonoBehaviour
         float rotationAngle = Mathf.Lerp(-5f, 5f, normalizedPos);
         
         return Quaternion.Euler(0, 0, rotationAngle);
+    }
+    
+    /// <summary>
+    /// Gets the calculated position for a specific card
+    /// </summary>
+    public Vector3 GetCardPosition(GameObject cardObject)
+    {
+        int cardIndex = cardsInHand.IndexOf(cardObject);
+        if (cardIndex >= 0)
+        {
+            return CalculateCardPosition(cardIndex);
+        }
+        return Vector3.zero;
     }
     
     /// <summary>
@@ -448,6 +456,14 @@ public class CardAnimationManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Checks if cards are currently being repositioned
+    /// </summary>
+    public bool IsRepositioning()
+    {
+        return isRepositioning;
+    }
+    
+    /// <summary>
     /// Forces immediate repositioning of all cards
     /// </summary>
     public void ForceRepositionCards()
@@ -461,6 +477,13 @@ public class CardAnimationManager : MonoBehaviour
                 Vector3 expectedPos = CalculateCardPosition(i);
                 Debug.Log($"Positioning card {i} to {expectedPos}");
                 PositionCard(cardsInHand[i], i, false);
+                
+                // Update hover effect base position after repositioning
+                CardHoverEffect hoverEffect = cardsInHand[i].GetComponent<CardHoverEffect>();
+                if (hoverEffect != null)
+                {
+                    hoverEffect.UpdateOriginalPosition();
+                }
             }
             else
             {
@@ -544,8 +567,17 @@ public class CardAnimationManager : MonoBehaviour
         Vector3 startPos = cardRect.anchoredPosition;
         
         Vector3 targetScale = highlight ? Vector3.one * 1.1f : Vector3.one;
-        Vector3 targetPos = highlight ? startPos + Vector3.up * 20f : 
-                           (cardIndex >= 0 ? CalculateCardPosition(cardIndex) : startPos);
+        
+        // Calculate absolute positions to prevent drift
+        Vector3 basePos = cardIndex >= 0 ? CalculateCardPosition(cardIndex) : startPos;
+        Vector3 hoverPos = basePos + Vector3.up * 20f;
+        Vector3 targetPos = highlight ? hoverPos : basePos;
+        
+        // If highlighting and current position is already higher than target hover position, clamp it
+        if (highlight && startPos.y >= hoverPos.y)
+        {
+            targetPos = startPos; // Stay at current position
+        }
         
         float duration = 0.2f;
         float elapsedTime = 0f;
@@ -558,6 +590,8 @@ public class CardAnimationManager : MonoBehaviour
             cardRect.localScale = Vector3.Lerp(startScale, targetScale, easedTime);
             cardRect.anchoredPosition = Vector3.Lerp(startPos, targetPos, easedTime);
             
+            elapsedTime += Time.deltaTime;
+            yield return null;
             elapsedTime += Time.deltaTime;
             yield return null;
         }

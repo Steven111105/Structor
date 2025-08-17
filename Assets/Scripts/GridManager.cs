@@ -56,7 +56,7 @@ public class GridManager : MonoBehaviour
     void SetupCPU()
     {
         // CPU is at center, will fire beams in 4 directions
-        Debug.Log($"CPU positioned at: {cpuPosition}");
+        // Debug.Log($"CPU positioned at: {cpuPosition}");
         
         // Create visual CPU GameObject
         CreateCPUVisual();
@@ -88,7 +88,7 @@ public class GridManager : MonoBehaviour
         // Add a tag for identification
         cpuObj.tag = "CPU";
         
-        Debug.Log($"CPU visual created at world position: {cpuObj.transform.position}");
+        // Debug.Log($"CPU visual created at world position: {cpuObj.transform.position}");
     }
     
     // Helper method to create a CPU sprite (diamond/cross shape)

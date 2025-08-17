@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     [Header("References")]
     public CardManager cardManager;
     public GridManager gridManager;
+    public CardAnimationManager cardAnimationManager;
     
     // Events
     public UnityEngine.Events.UnityEvent OnGameWon = new UnityEngine.Events.UnityEvent();
@@ -114,12 +115,26 @@ public class GameManager : MonoBehaviour
                 canAttack = cardManager.GetMarkedForDiscardCount() == 0;
             }
             
+            // Block if cards are animating
+            if (canAttack && cardAnimationManager != null)
+            {
+                canAttack = !cardAnimationManager.IsAnimating() && !cardAnimationManager.IsRepositioning();
+            }
+            
             attackButton.interactable = canAttack;
         }
         
         if (nextTurnButton != null)
         {
-            nextTurnButton.interactable = gameActive && currentAttack < maxAttacks;
+            bool canNextTurn = gameActive && currentAttack < maxAttacks;
+            
+            // Block if cards are animating
+            if (canNextTurn && cardAnimationManager != null)
+            {
+                canNextTurn = !cardAnimationManager.IsAnimating() && !cardAnimationManager.IsRepositioning();
+            }
+            
+            nextTurnButton.interactable = canNextTurn;
         }
     }
     
