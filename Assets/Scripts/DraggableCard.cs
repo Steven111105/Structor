@@ -192,7 +192,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         
         // Don't use discard or refill hand yet - wait for trash can button click
         
-        Debug.Log($"{cardData.cardName} dragged to trash - card removed (discard pending)");
+        // Debug.Log($"{cardData.cardName} dragged to trash - card removed (discard pending)");
         
         // Trigger repositioning of remaining cards before destroying this one
         TriggerHandRepositioning();
@@ -283,14 +283,14 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         if (cardData.isMult)
         {
             // Multiplicative: xX damage (e.g., x2 damage)
-            wire.damageAddition *= cardData.damageAddition;
-            Debug.Log($"Set damageAddition to {wire.damageAddition}");
+            wire.damageMultiplier = cardData.damageMultiplier;
+            Debug.Log($"Set damageMultiplier to {wire.damageMultiplier}");
         }
         else
         {
             // Additive: +X damage (e.g., +2 damage)
-            wire.damageMultiplier = cardData.damageMultiplier;
-            Debug.Log($"Set damageMultiplier to {wire.damageMultiplier}");
+            wire.damageAddition = cardData.damageAddition;
+            Debug.Log($"Set damageAddition to {wire.damageAddition}");
         }
         
         wire.isBoosted = true;
@@ -316,13 +316,13 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     /// </summary>
     void TriggerHandRepositioning()
     {
-        Debug.Log($"TriggerHandRepositioning called for card {gameObject.name}");
+        // Debug.Log($"TriggerHandRepositioning called for card {gameObject.name}");
         
         // Find the CardAnimationManager to trigger repositioning
         CardAnimationManager animationManager = FindObjectOfType<CardAnimationManager>();
         if (animationManager != null)
         {
-            Debug.Log("Found CardAnimationManager, removing card and repositioning");
+            // Debug.Log("Found CardAnimationManager, removing card and repositioning");
             
             // Remove this card from the animation manager's tracking before repositioning
             animationManager.RemoveCard(gameObject, false); // Don't animate removal since we're destroying it
@@ -341,12 +341,12 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     /// </summary>
     System.Collections.IEnumerator DelayedRepositioning(CardAnimationManager animationManager)
     {
-        Debug.Log("DelayedRepositioning coroutine started");
+        // Debug.Log("DelayedRepositioning coroutine started");
         yield return new WaitForEndOfFrame(); // Wait one frame for destroy to process
         
         if (animationManager != null)
         {
-            Debug.Log("Calling RepositionAllCards");
+            // Debug.Log("Calling RepositionAllCards");
             animationManager.RepositionAllCards();
         }
         else
@@ -362,7 +362,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         
         if (gridObject != null)
         {
-            Debug.Log($"PlaceRegularTile successful for {cardData.cardName}");
+            // Debug.Log($"PlaceRegularTile successful for {cardData.cardName}");
             
             // Update hand size counter
             if (cardManager != null)

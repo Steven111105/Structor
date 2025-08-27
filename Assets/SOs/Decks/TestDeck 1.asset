@@ -10,17 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0577ecd5cea405d4fb25a2b5b3ec6552, type: 3}
-  m_Name: TestDeck
+  m_Name: TestDeck 1
   m_EditorClassIdentifier: 
   cardEntries:
-  - cardData: {fileID: 11400000, guid: 8b9d4c65fdf6c2c41a38f8f63739efed, type: 2}
-    startingQuantity: 3
-  - cardData: {fileID: 11400000, guid: ce191cd3d9c260443b1ced5c290e90d5, type: 2}
-    startingQuantity: 3
-  - cardData: {fileID: 11400000, guid: f0e994db805f24943b8a28acc09ba2b2, type: 2}
-    startingQuantity: 3
-  - cardData: {fileID: 11400000, guid: ce191cd3d9c260443b1ced5c290e90d5, type: 2}
-    startingQuantity: 2
   - cardData: {fileID: 11400000, guid: 58d782cf8942e4e41b553dca5bf96167, type: 2}
-    startingQuantity: 2
+    startingQuantity: 1
+  - cardData: {fileID: 11400000, guid: ce191cd3d9c260443b1ced5c290e90d5, type: 2}
+    startingQuantity: 1
   deckDescription: Default deck configuration

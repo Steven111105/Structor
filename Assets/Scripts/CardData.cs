@@ -13,7 +13,8 @@ public class CardData : ScriptableObject
     [Header("Gameplay")]
     public bool canRotate = true; // Some items might be fixed orientation
 
-    [Header("Sensor Settings")]
+    [Header("Damage Settings")]
+    public int baseDamage = 20; // Damage from passing wire
     public int sensorValue = 10; // For sensors only
 
     [Header("Booster Settings")]

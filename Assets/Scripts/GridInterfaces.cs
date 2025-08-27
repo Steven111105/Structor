@@ -2,10 +2,10 @@ using UnityEngine;
 
 public interface IBeamReceiver
 {
-    void BeamComingFromNorth(float damage);
-    void BeamComingFromSouth(float damage);
-    void BeamComingFromEast(float damage);
-    void BeamComingFromWest(float damage);
+    void BeamComingFromNorth(float damage, BeamPathTracker tracker);
+    void BeamComingFromSouth(float damage, BeamPathTracker tracker);
+    void BeamComingFromEast(float damage, BeamPathTracker tracker);
+    void BeamComingFromWest(float damage, BeamPathTracker tracker);
     void Rotate();
 }
 

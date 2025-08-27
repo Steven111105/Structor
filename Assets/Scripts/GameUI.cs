@@ -15,7 +15,7 @@ public class GameUI : MonoBehaviour
     public Button resetButton;
     
     [Header("Panels")]
-    public GameObject victoryPanel;
+    public GameObject shopPanel;
     public GameObject defeatPanel;
     
     private GameManager gameManager;
@@ -32,10 +32,9 @@ public class GameUI : MonoBehaviour
             gameManager.discardCounterText = discardCounterText;
             gameManager.quotaText = quotaText;
             gameManager.attackButton = attackButton;
-            gameManager.nextTurnButton = nextTurnButton;
             
             // Setup event listeners
-            gameManager.OnGameWon.AddListener(ShowVictoryPanel);
+            gameManager.OnGameWon.AddListener(ShowShopPanel);
             gameManager.OnGameLost.AddListener(ShowDefeatPanel);
         }
         
@@ -52,11 +51,11 @@ public class GameUI : MonoBehaviour
         HideGameOverPanels();
     }
     
-    void ShowVictoryPanel()
+    void ShowShopPanel()
     {
-        if (victoryPanel != null)
+        if (shopPanel != null)
         {
-            victoryPanel.SetActive(true);
+            shopPanel.SetActive(true);
         }
         
         if (gameStatusText != null)
@@ -82,9 +81,9 @@ public class GameUI : MonoBehaviour
     
     void HideGameOverPanels()
     {
-        if (victoryPanel != null)
+        if (shopPanel != null)
         {
-            victoryPanel.SetActive(false);
+            shopPanel.SetActive(false);
         }
         
         if (defeatPanel != null)

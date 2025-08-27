@@ -102,7 +102,7 @@ public class TrashCanUI : MonoBehaviour
         if (cardManager.hasPendingDiscards)
         {
             // Confirm discard (uses 1 discard action, refills hand)
-            Debug.Log($"Confirming discard of trashed cards (1 discard action)");
+            // Debug.Log($"Confirming discard of trashed cards (1 discard action)");
             cardManager.ConfirmDiscards();
         }
         else

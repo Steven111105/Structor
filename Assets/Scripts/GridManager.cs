@@ -1,31 +1,36 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 public enum Direction
 {
-    North = 0, East = 1, South = 2, West = 3
+    // North = 0, East = 1, South = 2, West = 3
+    South = 0,
+    East = 1,
+    North = 2,
+    West = 3,
 }
 
 public enum CardType
 {
-    StraightWire, LeftBendWire, RightBendWire, TSplitter, Booster, Sensor
+    StraightWire, BendWire, TSplitter, Booster, Sensor
 }
 
 public class GridManager : MonoBehaviour
 {
+    public static GridManager instance;
     [Header("Grid Settings")]
     public int gridWidth = 15;
     public int gridHeight = 11;
     public float cellSize = 1f;
     
     [Header("CPU Settings")]
-    public float baseDamage = 1f;
-    
+    public float baseDamage = 75f;
+
     [Header("Sprites")]
+    public Sprite cpuSprite;
     public Sprite straightWireSprite;
-    public Sprite leftBendWireSprite;
+    public Sprite bendWireSprite;
     public Sprite rightBendWireSprite;
     public Sprite tSplitterSprite;
     public Sprite boosterSprite;
@@ -34,13 +39,20 @@ public class GridManager : MonoBehaviour
     // Grid storage
     private IBeamReceiver[,] grid;
     private Vector2Int cpuPosition;
-    
-    // Events
-    [Header("Events")]
-    public UnityEvent<float, Vector2Int, Direction> OnBeamFired = new UnityEvent<float, Vector2Int, Direction>();
-    public UnityEvent<float> OnBeamProcessed = new UnityEvent<float>(); // For boosters to listen to
-    public UnityEvent<int, Vector2Int> OnSensorHit = new UnityEvent<int, Vector2Int>();
-    
+
+    void Awake()
+    {
+        if(instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
     void Start()
     {
         InitializeGrid();
@@ -55,10 +67,7 @@ public class GridManager : MonoBehaviour
     
     void SetupCPU()
     {
-        // CPU is at center, will fire beams in 4 directions
-        // Debug.Log($"CPU positioned at: {cpuPosition}");
-        
-        // Create visual CPU GameObject
+
         CreateCPUVisual();
     }
     
@@ -81,8 +90,8 @@ public class GridManager : MonoBehaviour
         
         // Add 2D visual representation
         SpriteRenderer spriteRenderer = cpuObj.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = CreateCPUSprite();
-        spriteRenderer.color = Color.yellow;
+        spriteRenderer.sprite = cpuSprite;
+        // spriteRenderer.color = Color.yellow;
         spriteRenderer.sortingOrder = 3; // Higher than other objects
         
         // Add a tag for identification
@@ -91,47 +100,11 @@ public class GridManager : MonoBehaviour
         // Debug.Log($"CPU visual created at world position: {cpuObj.transform.position}");
     }
     
-    // Helper method to create a CPU sprite (diamond/cross shape)
-    Sprite CreateCPUSprite()
-    {
-        // Create a CPU-like texture with cross pattern
-        Texture2D texture = new Texture2D(32, 32, TextureFormat.ARGB32, false);
-        Color[] pixels = new Color[32 * 32];
-        
-        // Create a cross/plus pattern for CPU
-        for (int y = 0; y < 32; y++)
-        {
-            for (int x = 0; x < 32; x++)
-            {
-                // Horizontal bar (center)
-                if (y >= 12 && y <= 19)
-                {
-                    pixels[y * 32 + x] = Color.white;
-                }
-                // Vertical bar (center)
-                else if (x >= 12 && x <= 19)
-                {
-                    pixels[y * 32 + x] = Color.white;
-                }
-                // Corner accents
-                else if ((x <= 3 || x >= 28) && (y <= 3 || y >= 28))
-                {
-                    pixels[y * 32 + x] = Color.white;
-                }
-                else
-                {
-                    pixels[y * 32 + x] = Color.clear;
-                }
-            }
-        }
-        texture.SetPixels(pixels);
-        texture.Apply();
-        
-        return Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
-    }
-    
     public void FireBeams()
     {
+        Debug.Log("=== FIRING BEAMS FROM CPU ===");
+        //include tracers
+
         // Fire beams in all 4 directions from CPU
         FireBeamInDirection(Direction.North);
         FireBeamInDirection(Direction.South);
@@ -142,28 +115,27 @@ public class GridManager : MonoBehaviour
     void FireBeamInDirection(Direction direction)
     {
         Vector2Int targetPos = GetPositionInDirection(cpuPosition, direction);
-        Debug.Log($"[CPU] Firing beam {direction} from {cpuPosition} to {targetPos}");
+        // Debug.Log($"[CPU] Firing beam {direction} from {cpuPosition} to {targetPos}");
         
         if (IsValidPosition(targetPos))
         {
             var target = grid[targetPos.x, targetPos.y];
             if (target != null)
             {
-                Debug.Log($"[CPU] Found target at {targetPos}: {((MonoBehaviour)target).name}");
-                // Call the appropriate beam method based on direction
+                var tracker = new BeamPathTracker(); // Create a new tracker for this beam
                 switch (direction)
                 {
                     case Direction.North:
-                        target.BeamComingFromSouth(baseDamage);
+                        target.BeamComingFromSouth(baseDamage, tracker);
                         break;
                     case Direction.South:
-                        target.BeamComingFromNorth(baseDamage);
+                        target.BeamComingFromNorth(baseDamage, tracker);
                         break;
                     case Direction.East:
-                        target.BeamComingFromWest(baseDamage);
+                        target.BeamComingFromWest(baseDamage, tracker);
                         break;
                     case Direction.West:
-                        target.BeamComingFromEast(baseDamage);
+                        target.BeamComingFromEast(baseDamage, tracker);
                         break;
                 }
             }
@@ -177,8 +149,9 @@ public class GridManager : MonoBehaviour
             Debug.Log($"[CPU] Invalid position {targetPos}");
         }
         
-        // Fire event for any systems that want to know about beam firing
-        OnBeamFired?.Invoke(baseDamage, targetPos, direction);
+    // If you want to handle beam firing, call a method here directly
+    // Example: GameManager.Instance.OnBeamFired(baseDamage, targetPos, direction);
+    // Or remove if not needed
     }
     
     public IBeamReceiver GetNeighbor(Vector2Int position, Direction direction)
@@ -296,13 +269,9 @@ public class GridManager : MonoBehaviour
                 spriteRenderer.sprite = straightWireSprite;
                 spriteRenderer.color = Color.blue;
                 break;
-            case CardType.LeftBendWire:
-                spriteRenderer.sprite = leftBendWireSprite;
+            case CardType.BendWire:
+                spriteRenderer.sprite = bendWireSprite;
                 spriteRenderer.color = Color.green;
-                break;
-            case CardType.RightBendWire:
-                spriteRenderer.sprite = rightBendWireSprite;
-                spriteRenderer.color = Color.magenta;
                 break;
             case CardType.TSplitter:
                 spriteRenderer.sprite = tSplitterSprite;
@@ -435,19 +404,14 @@ public class GridManager : MonoBehaviour
         CardData testCard = ScriptableObject.CreateInstance<CardData>();
         testCard.cardName = baseName;
         testCard.cardType = cardType;
-        testCard.canRotate = cardType != CardType.Sensor; // Sensors typically don't rotate
-        
-        // Set sensor-specific properties
-        if (cardType == CardType.Sensor)
-        {
-            testCard.sensorValue = 25;
-        }
+        testCard.canRotate = cardType != CardType.Sensor && cardType != CardType.Booster; // Sensors and Boosters typically don't rotate
         
         gridObj.cardData = testCard;
         gridObj.gridPosition = position;
-        
+        gridObj.transform.localRotation = Quaternion.identity;
+
         // Explicitly set input direction to South BEFORE any rotation/visual setup
-        gridObj.inputDirection = Direction.South;
+        gridObj.InitializeGridObject(this);
         
         // Position in world - this already accounts for GridManager's position
         obj.transform.position = GridToWorldPosition(position);
@@ -464,8 +428,20 @@ public class GridManager : MonoBehaviour
             return null;
         }
         
-        Debug.Log($"Created {baseName} at grid {position}, world {obj.transform.position}");
+        // Debug.Log($"Created {baseName} at grid {position}, world {obj.transform.position}");
         return gridObj;
+    }
+
+    public void ClearGridObjects()
+    {
+        foreach (Transform child in transform)
+        {
+            GridObject gridObj = child.GetComponent<GridObject>();
+            if (gridObj != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
     }
     
     // Testing and Debug Methods
@@ -475,9 +451,9 @@ public class GridManager : MonoBehaviour
         // Create test setup - CPU is at (7,5)
         // Path: CPU -West-> Straight -West-> RightBend -North-> Straight -North-> LeftBend -West-> Sensor
         CreateGridObject("TestStraightWire", CardType.StraightWire, new Vector2Int(6, 5)); // West of CPU: East input → West output
-        CreateGridObject("TestRightBendWire", CardType.RightBendWire, new Vector2Int(5, 5)); // Right turn: East input → North output  
+        CreateGridObject("TestRightBendWire", CardType.BendWire, new Vector2Int(5, 5)); // Right turn: East input → North output  
         CreateGridObject("TestStraightWire", CardType.StraightWire, new Vector2Int(5, 6)); // Vertical: South input → North output
-        CreateGridObject("TestLeftBendWire", CardType.LeftBendWire, new Vector2Int(5, 7)); // Left turn: South input → West output
+        CreateGridObject("TestLeftBendWire", CardType.BendWire, new Vector2Int(5, 7)); // Left turn: South input → West output
         CreateGridObject("TestSensor", CardType.Sensor, new Vector2Int(4, 7)); // Target for beam
         
         Debug.Log("Test setup created! Path: CPU(7,5) -West-> Straight(6,5) -West-> RightBend(5,5) -North-> Straight(5,6) -North-> LeftBend(5,7) -West-> Sensor(4,7)");
@@ -543,7 +519,6 @@ public class GridManager : MonoBehaviour
                 {
                     arrowPos = arrow.localPosition;
                 }
-                Debug.Log($"{gridObj.name} at {gridObj.gridPosition}: inputDirection={gridObj.inputDirection}, arrow at {arrowPos}");
             }
         }
     }

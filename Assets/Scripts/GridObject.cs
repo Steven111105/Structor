@@ -1,36 +1,81 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+public class BeamPathTracker
+{
+    private List<Vector2Int> path = new List<Vector2Int>();
+    private HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+
+    public BeamPathTracker()
+    {
+    }
+
+    // Copy constructor for cloning
+    public BeamPathTracker(BeamPathTracker other)
+    {
+        path = new List<Vector2Int>(other.path);
+        visited = new HashSet<Vector2Int>(other.visited);
+    }
+
+    public bool HasVisited(Vector2Int pos)
+    {
+        return visited.Contains(pos);
+    }
+
+    public void MarkVisited(Vector2Int pos)
+    {
+        visited.Add(pos);
+        path.Add(pos);
+    }
+
+    public string GetPathString()
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append("Beam Path: ");
+        for (int i = 0; i < path.Count; i++)
+        {
+            sb.Append(path[i]);
+            if (i < path.Count - 1)
+                sb.Append(" -> ");
+        }
+        return sb.ToString();
+    }
+}
 
 public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
 {
     [Header("Grid Object Settings")]
     public CardData cardData;
     public Vector2Int gridPosition;
-    public Direction inputDirection = Direction.South;
-    
+
+    // Bidirectional wire support
+    public List<Direction> connectedSides = new List<Direction>();
+
     [Header("Runtime Booster Effects")]
     public float damageMultiplier = 1f;
     public float damageAddition = 0f;
     public bool isBoosted = false;
-    
-    private GridManager gridManager;
-    
+
+    public GridManager gridManager;
+
     // IGridItem implementation
-    public Vector2Int GridPosition 
-    { 
-        get => gridPosition; 
-        set => gridPosition = value; 
+    public Vector2Int GridPosition
+    {
+        get => gridPosition;
+        set => gridPosition = value;
     }
-    
+
     public CardData CardData => cardData;
     public bool CanRotate => cardData?.canRotate ?? true;
-    
-    void Start()
+
+    public void InitializeGridObject(GridManager manager)
     {
-        gridManager = FindObjectOfType<GridManager>();
+        gridManager = manager;
         SetupVisualComponents();
+        SetupConnectedSides();
         UpdateVisualRotation();
     }
-    
+
     void SetupVisualComponents()
     {
         if (GetComponent<BoxCollider2D>() == null)
@@ -39,185 +84,143 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             collider2D.size = Vector2.one;
         }
     }
-    
-    public void UpdateVisualRotation()
+
+    // Set up connected sides based on card type
+    void SetupConnectedSides()
     {
-        float rotationAngle = 0f;
-        
-        switch (inputDirection)
+        connectedSides.Clear();
+        switch (cardData.cardType)
         {
-            case Direction.North:
-                rotationAngle = 180f;
+            case CardType.StraightWire:
+                connectedSides.Add(Direction.South);
+                connectedSides.Add(Direction.North);
                 break;
-            case Direction.East:
-                rotationAngle = 90f;
+            case CardType.BendWire: // Now just "Bend"
+                connectedSides.Add(Direction.South);
+                connectedSides.Add(Direction.West);
                 break;
-            case Direction.South:
-                rotationAngle = 0f;
+            case CardType.TSplitter:
+                connectedSides.Add(Direction.South);
+                connectedSides.Add(Direction.West);
+                connectedSides.Add(Direction.East);
                 break;
-            case Direction.West:
-                rotationAngle = 270f;
+            case CardType.Booster:
+            case CardType.Sensor:
+                // No wire sides needed
                 break;
         }
-        
+    }
+
+    public void UpdateVisualRotation()
+    {
+        // For simplicity, rotate by 90 degrees per rotation
+        // You may want to update this for your visuals
+        float rotationAngle = 0f;
+        if (connectedSides.Count > 0)
+        {
+            // Use the first side as reference for rotation
+            rotationAngle = 90f * (int)connectedSides[0];
+        }
         transform.rotation = Quaternion.Euler(0, 0, rotationAngle);
     }
-    
-    public virtual void BeamComingFromNorth(float damage)
+
+    public virtual void BeamComingFromNorth(float damage, BeamPathTracker tracker)
     {
-        ProcessBeam(damage, Direction.North);
+        if (tracker.HasVisited(gridPosition))
+        {
+            Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
+            return;
+        }
+        tracker.MarkVisited(gridPosition);
+        ProcessBeam(damage, Direction.North, tracker);
     }
-    
-    public virtual void BeamComingFromSouth(float damage)
+
+    public virtual void BeamComingFromSouth(float damage, BeamPathTracker tracker)
     {
-        ProcessBeam(damage, Direction.South);
+        if (tracker.HasVisited(gridPosition))
+        {
+            Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
+            return;
+        }
+        tracker.MarkVisited(gridPosition);
+        ProcessBeam(damage, Direction.South, tracker);
     }
-    
-    public virtual void BeamComingFromEast(float damage)
+
+    public virtual void BeamComingFromEast(float damage, BeamPathTracker tracker)
     {
-        ProcessBeam(damage, Direction.East);
+        if (tracker.HasVisited(gridPosition))
+        {
+            Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
+            return;
+        }
+        tracker.MarkVisited(gridPosition);
+        ProcessBeam(damage, Direction.East, tracker);
     }
-    
-    public virtual void BeamComingFromWest(float damage)
+
+    public virtual void BeamComingFromWest(float damage, BeamPathTracker tracker)
     {
-        ProcessBeam(damage, Direction.West);
+        if (tracker.HasVisited(gridPosition))
+        {
+            Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
+            return;
+        }
+        tracker.MarkVisited(gridPosition);
+        ProcessBeam(damage, Direction.West, tracker);
     }
-    
-    protected virtual void ProcessBeam(float damage, Direction incomingDirection)
+
+    protected virtual void ProcessBeam(float damage, Direction incomingDirection, BeamPathTracker tracker)
     {
-        if (cardData == null) 
+        if (cardData == null)
         {
             Debug.Log($"[{name}] REJECTED beam {damage} from {incomingDirection} - no cardData");
             return;
         }
-        
-        Debug.Log($"[{name}] RECEIVED beam {damage} from {incomingDirection}, type: {cardData.cardType}");
-        
+        damage += cardData.baseDamage;
+
+        // Debug.Log($"[{name}] RECEIVED beam {damage} from {incomingDirection}, type: {cardData.cardType.ToString()}");
+
         switch (cardData.cardType)
         {
             case CardType.StraightWire:
-                ProcessStraightWire(damage, incomingDirection);
-                break;
-            case CardType.LeftBendWire:
-                ProcessLeftBendWire(damage, incomingDirection);
-                break;
-            case CardType.RightBendWire:
-                ProcessRightBendWire(damage, incomingDirection);
-                break;
+            case CardType.BendWire: // Now just "Bend"
             case CardType.TSplitter:
-                ProcessTSplitter(damage, incomingDirection);
-                break;
-            case CardType.Booster:
-                ProcessBooster(damage, incomingDirection);
+                ProcessBidirectionalWire(damage, incomingDirection, tracker);
                 break;
             case CardType.Sensor:
-                ProcessSensor(damage, incomingDirection);
+                ProcessSensor(damage, tracker, incomingDirection);
                 break;
         }
     }
-    
-    void ProcessStraightWire(float damage, Direction incomingDirection)
+
+    // Bidirectional wire logic
+    void ProcessBidirectionalWire(float damage, Direction incomingDirection, BeamPathTracker tracker)
     {
-        Direction outputDirection = GetStraightWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1))
+        if (!connectedSides.Contains(incomingDirection))
         {
-            Debug.Log($"[{name}] ACCEPTED straight wire: {incomingDirection} → {outputDirection}");
-            // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
-            PassBeamToNeighbor(finalDamage, outputDirection);
+            Debug.Log($"[{name}] REJECTED wire: {incomingDirection} not a connected side");
+            return;
         }
-        else
+        // Apply booster effects if this wire is boosted
+        float finalDamage = isBoosted ? (damage + damageAddition) * damageMultiplier : damage;
+
+        foreach (var side in connectedSides)
         {
-            Debug.Log($"[{name}] REJECTED straight wire: {incomingDirection} (wrong direction for current orientation)");
+            if (side == incomingDirection) continue;
+            BeamPathTracker branchTracker = new BeamPathTracker(tracker); // Clone the tracker for each branch
+            // Debug.Log($"[{name}] ACCEPTED, Sending {incomingDirection} → {side} with {finalDamage} damage");
+            PassBeamToNeighbor(finalDamage, side, branchTracker);
         }
     }
-    
-    void ProcessLeftBendWire(float damage, Direction incomingDirection)
-    {
-        Direction outputDirection = GetLeftBendWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1))
-        {
-            Debug.Log($"[{name}] ACCEPTED left bend: {incomingDirection} → {outputDirection}");
-            // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
-            PassBeamToNeighbor(finalDamage, outputDirection);
-        }
-        else
-        {
-            Debug.Log($"[{name}] REJECTED left bend: {incomingDirection} (wrong direction for current orientation)");
-        }
-    }
-    
-    void ProcessRightBendWire(float damage, Direction incomingDirection)
-    {
-        Direction outputDirection = GetRightBendWireOutput(incomingDirection);
-        if (outputDirection != (Direction)(-1))
-        {
-            Debug.Log($"[{name}] ACCEPTED right bend: {incomingDirection} → {outputDirection}");
-            // Apply booster effects if this wire is boosted
-            float finalDamage = isBoosted? (damage + damageAddition) * damageMultiplier : damage;
-            PassBeamToNeighbor(finalDamage, outputDirection);
-        }
-        else
-        {
-            Debug.Log($"[{name}] REJECTED right bend: {incomingDirection} (wrong direction for current orientation)");
-        }
-    }
-    
-    void ProcessTSplitter(float damage, Direction incomingDirection)
-    {
-        if (incomingDirection != inputDirection) return;
-        
-        Direction output1 = (Direction)(((int)inputDirection + 1) % 4);
-        Direction output2 = (Direction)(((int)inputDirection - 1 + 4) % 4);
-        
-        float splitDamage = damage * 0.5f;
-        PassBeamToNeighbor(splitDamage, output1);
-        PassBeamToNeighbor(splitDamage, output2);
-    }
-    
-    void ProcessBooster(float damage, Direction incomingDirection)
-    {
-        if (incomingDirection != inputDirection) return;
-        
-        // Apply both the CardData multiplier AND the runtime booster multiplier
-        float totalMultiplier = cardData.damageMultiplier * damageMultiplier;
-        float boostedDamage = damage * totalMultiplier;
-        
-        gridManager.OnBeamProcessed?.Invoke(boostedDamage);
-        
-        Direction outputDirection = (Direction)(((int)inputDirection + 2) % 4);
-        PassBeamToNeighbor(boostedDamage, outputDirection);
-    }
-    
-    void ProcessSensor(float damage, Direction incomingDirection)
+
+    void ProcessSensor(float damage, BeamPathTracker tracker, Direction incomingDirection)
     {
         Debug.Log($"[{name}] SENSOR HIT! Received {damage} damage from {incomingDirection}");
-        
+        Debug.Log(tracker.GetPathString());
         int contribution = Mathf.RoundToInt(damage);
-        Debug.Log($"[{name}] Sensor contribution: {damage} = {contribution}");
-        gridManager.OnSensorHit?.Invoke(contribution, gridPosition);
+        GameManager.instance.OnSensorHit(contribution);
     }
-    
-    Direction GetStraightWireOutput(Direction incomingDirection)
-    {
-        if (incomingDirection != inputDirection) return (Direction)(-1);
-        return (Direction)(((int)inputDirection + 2) % 4);
-    }
-    
-    Direction GetLeftBendWireOutput(Direction incomingDirection)
-    {
-        if (incomingDirection != inputDirection) return (Direction)(-1);
-        return (Direction)(((int)inputDirection + 1) % 4);
-    }
-    
-    Direction GetRightBendWireOutput(Direction incomingDirection)
-    {
-        if (incomingDirection != inputDirection) return (Direction)(-1);
-        return (Direction)(((int)inputDirection - 1 + 4) % 4);
-    }
-    
-    void PassBeamToNeighbor(float damage, Direction direction)
+
+    void PassBeamToNeighbor(float damage, Direction direction, BeamPathTracker tracker)
     {
         var neighbor = gridManager.GetNeighbor(gridPosition, direction);
         if (neighbor != null)
@@ -225,31 +228,55 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             switch (direction)
             {
                 case Direction.North:
-                    neighbor.BeamComingFromSouth(damage);
+                    neighbor.BeamComingFromSouth(damage, tracker);
                     break;
                 case Direction.South:
-                    neighbor.BeamComingFromNorth(damage);
+                    neighbor.BeamComingFromNorth(damage, tracker);
                     break;
                 case Direction.East:
-                    neighbor.BeamComingFromWest(damage);
+                    neighbor.BeamComingFromWest(damage, tracker);
                     break;
                 case Direction.West:
-                    neighbor.BeamComingFromEast(damage);
+                    neighbor.BeamComingFromEast(damage, tracker);
                     break;
             }
         }
     }
-    
+
     public virtual void Rotate()
     {
         if (!CanRotate) return;
-        
-        inputDirection = (Direction)(((int)inputDirection + 1) % 4);
-        UpdateVisualRotation();
+        // Rotate all connected sides counter-clockwise
+        for (int i = 0; i < connectedSides.Count; i++)
+        {
+            connectedSides[i] = (Direction)(((int)connectedSides[i] + 3) % 4); // -1 mod 4
+        }
+        StartCoroutine(LerpRotation());
     }
-    
+
+    private IEnumerator LerpRotation()
+    {
+        float duration = 0.12f;
+        float elapsed = 0f;
+        Quaternion startRot = transform.rotation;
+        float targetAngle = 0f;
+        if (connectedSides.Count > 0)
+        {
+            targetAngle = 90f * (int)connectedSides[0];
+        }
+        Quaternion endRot = Quaternion.Euler(0, 0, targetAngle);
+        while (elapsed < duration)
+        {
+            transform.rotation = Quaternion.Lerp(startRot, endRot, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.rotation = endRot;
+    }
+
     void OnMouseDown()
     {
+        // Debug.Log($"Rotating {GridPosition.x} {GridPosition.y}");
         if (CanRotate)
         {
             Rotate();

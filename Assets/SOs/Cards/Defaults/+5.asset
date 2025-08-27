@@ -17,6 +17,6 @@ MonoBehaviour:
   cardSprite: {fileID: -1266691279, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
   canRotate: 0
   sensorValue: 0
-  damageMultiplier: 5
-  damageAddition: 0
+  damageMultiplier: 1
+  damageAddition: 5
   isMult: 0

@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 
 public class CardAnimationManager : MonoBehaviour
 {
+    public static CardAnimationManager instance;
     [Header("Card Hand Settings")]
     public Transform cardHandParent; // The parent container for cards
     public Transform deckPosition; // Where cards come from (deck position)
@@ -34,6 +36,10 @@ public class CardAnimationManager : MonoBehaviour
     private bool isAnimating = false;
     private bool isDrawingCard = false; // Track individual card draw state
     private bool isRepositioning = false; // Track repositioning state
+    void Awake()
+    {
+        instance = this;
+    }
     
     void Start()
     {
@@ -317,7 +323,7 @@ public class CardAnimationManager : MonoBehaviour
     /// </summary>
     public void RepositionAllCards()
     {
-        Debug.Log($"Repositioning all {cardsInHand.Count} cards");
+        // Debug.Log($"Repositioning all {cardsInHand.Count} cards");
         
         isRepositioning = true;
         StartCoroutine(RepositionCardsCoroutine());
