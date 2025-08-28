@@ -684,21 +684,13 @@ MonoBehaviour:
   gridHeight: 7
   cellSize: 0.8
   baseDamage: 1
+  cpuSprite: {fileID: 0}
   straightWireSprite: {fileID: -353206576, guid: 243961e56118c0d46b13e31547241443, type: 3}
-  leftBendWireSprite: {fileID: -588882260, guid: 243961e56118c0d46b13e31547241443, type: 3}
+  bendWireSprite: {fileID: 0}
   rightBendWireSprite: {fileID: -1012806687, guid: 243961e56118c0d46b13e31547241443, type: 3}
   tSplitterSprite: {fileID: 1642145061, guid: 243961e56118c0d46b13e31547241443, type: 3}
   boosterSprite: {fileID: -353206576, guid: 243961e56118c0d46b13e31547241443, type: 3}
   sensorSprite: {fileID: -353206576, guid: 243961e56118c0d46b13e31547241443, type: 3}
-  OnBeamFired:
-    m_PersistentCalls:
-      m_Calls: []
-  OnBeamProcessed:
-    m_PersistentCalls:
-      m_Calls: []
-  OnSensorHit:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!4 &413669605
 Transform:
   m_ObjectHideFlags: 0
@@ -745,9 +737,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sfxList:
   - name: ButtonClick
-    clip: {fileID: 0}
-  - name: ButtonClick
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 37dd90964b972884fb646d3f4af6b013, type: 3}
+  - name: Deploy
+    clip: {fileID: 8300000, guid: 01c22f4e29cbf5044a2b127e0f791356, type: 3}
+  - name: Discard
+    clip: {fileID: 8300000, guid: 15c661d6d4512cb4ca2c86468760372b, type: 3}
+  - name: Draw
+    clip: {fileID: 8300000, guid: 4414d136a64084545b2240124d8ee076, type: 3}
+  - name: GameOver
+    clip: {fileID: 8300000, guid: 01b51939be11eef4080542c2d659ed8d, type: 3}
+  - name: Purchase
+    clip: {fileID: 8300000, guid: ea84329646332554c826d7a08b7746da, type: 3}
+  - name: Shoot
+    clip: {fileID: 8300000, guid: 05206da0413923342af4565c80d53915, type: 3}
 --- !u!4 &428990382
 Transform:
   m_ObjectHideFlags: 0
@@ -1023,6 +1025,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f221584108ab1c41890ae2e855fcf98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ResetGameEvent: {fileID: 0}
   maxHandSize: 5
   maxAttacks: 3
   maxDiscards: 3
@@ -1036,10 +1039,6 @@ MonoBehaviour:
   discardCounterText: {fileID: 388448011}
   quotaText: {fileID: 728553394}
   attackButton: {fileID: 443937580}
-  nextTurnButton: {fileID: 819566635}
-  cardManager: {fileID: 944864486}
-  gridManager: {fileID: 413669604}
-  cardAnimationManager: {fileID: 944864487}
   OnGameWon:
     m_PersistentCalls:
       m_Calls: []
@@ -1484,6 +1483,7 @@ MonoBehaviour:
   autoRefillWhenEmpty: 1
   currentHandSize: 0
   hasPendingDiscards: 0
+  cardDiscarded: 0
 --- !u!114 &944864487
 MonoBehaviour:
   m_ObjectHideFlags: 0
