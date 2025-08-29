@@ -8,6 +8,8 @@ public class SFX
 {
     public string name;
     public AudioClip clip;
+    [Range(0f, 1f)]
+    public float volume = 1.0f;
 }
 public class SFXManager : MonoBehaviour
 {
@@ -40,15 +42,20 @@ public class SFXManager : MonoBehaviour
 
     }
 
-    public void PlaySFX(string sfxName)
+    public void PlaySFX(string clipName)
     {
-        foreach (SFX sfx in sfxList)
+        SFX sfx = sfxList.Find(s => s.name == clipName);
+        if (sfx != null)
         {
-            if (sfx.name == sfxName)
-            {
-                AudioSource.PlayClipAtPoint(sfx.clip, Camera.main.transform.position);
-                return;
-            }
+            AudioSource tempSource = gameObject.AddComponent<AudioSource>();
+            tempSource.clip = sfx.clip;
+            tempSource.volume = sfx.volume;
+            tempSource.Play();
+            Destroy(tempSource, sfx.clip.length);
+        }
+        else
+        {
+            Debug.Log("Could not find SFX clip: " + clipName);
         }
     }
 }

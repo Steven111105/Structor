@@ -40,6 +40,8 @@ public class GridManager : MonoBehaviour
     private IBeamReceiver[,] grid;
     private Vector2Int cpuPosition;
 
+    public GameObject gridObjectPrefab;
+
     void Awake()
     {
         if(instance == null)
@@ -386,13 +388,14 @@ public class GridManager : MonoBehaviour
     // Object Creation Methods
     public GridObject CreateGridObject(string baseName, CardType cardType, Vector2Int position)
     {
-        GameObject obj = new GameObject($"{baseName}_{position.x}_{position.y}");
-        
+        GameObject obj = Instantiate(gridObjectPrefab);
+        obj.name = $"{baseName}_{position.x}_{position.y}";
+
         // Parent the object to the GridManager for organization
         obj.transform.SetParent(transform);
-        
-        GridObject gridObj = obj.AddComponent<GridObject>();
-        
+
+        GridObject gridObj = obj.GetComponent<GridObject>();
+
         // Create minimal CardData
         CardData testCard = ScriptableObject.CreateInstance<CardData>();
         testCard.cardName = baseName;
@@ -420,7 +423,7 @@ public class GridManager : MonoBehaviour
             DestroyImmediate(obj);
             return null;
         }
-        
+        SFXManager.instance.PlaySFX("Deploy");
         // Debug.Log($"Created {baseName} at grid {position}, world {obj.transform.position}");
         return gridObj;
     }
@@ -435,6 +438,7 @@ public class GridManager : MonoBehaviour
                 Destroy(child.gameObject);
             }
         }
+        grid = new IBeamReceiver[gridWidth, gridHeight];
     }
     
     // Testing and Debug Methods

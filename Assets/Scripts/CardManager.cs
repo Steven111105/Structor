@@ -519,7 +519,7 @@ public class CardManager : MonoBehaviour
             Debug.Log("No cards pending discard");
             return;
         }
-        
+
         List<CardData> drawnCards = new List<CardData>();
 
         for (int i = 0; i < cardDiscarded; i++)
@@ -571,5 +571,11 @@ public class CardManager : MonoBehaviour
     {
         // Return 1 if pending, 0 if not (for UI compatibility)
         return hasPendingDiscards ? 1 : 0;
+    }
+
+    public void ResetCardsAndDeck()
+    {
+        ClearHand();
+        InitializeDeck();
     }
 }

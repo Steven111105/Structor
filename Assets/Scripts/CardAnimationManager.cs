@@ -49,14 +49,14 @@ public class CardAnimationManager : MonoBehaviour
             cardHandParent = transform;
         }
     }
-    
+
     /// <summary>
     /// Adds a card to the hand with animation
     /// </summary>
     public void DrawCard(GameObject cardObject, bool animate = true)
     {
         if (cardObject == null) return;
-        
+
         // If we're currently drawing a card and this is an animated draw, wait
         if (animate && isDrawingCard)
         {
@@ -64,12 +64,12 @@ public class CardAnimationManager : MonoBehaviour
             StartCoroutine(WaitAndDrawCard(cardObject, animate));
             return;
         }
-        
+
         // Ensure the card is properly parented to the hand
         if (cardHandParent != null && cardObject.transform.parent != cardHandParent)
         {
             cardObject.transform.SetParent(cardHandParent, false);
-            
+
             // Verify the cardHandParent is under a Canvas
             Canvas parentCanvas = cardHandParent.GetComponentInParent<Canvas>();
             if (parentCanvas == null)
@@ -77,19 +77,19 @@ public class CardAnimationManager : MonoBehaviour
                 Debug.LogError($"CardHandParent '{cardHandParent.name}' is not under a Canvas! Cards won't be able to find Canvas for dragging.");
             }
         }
-        
+
         // Set up proper anchors and pivots for the card
         SetupCardTransform(cardObject);
 
         // Set initial position and properties
         RectTransform cardRect = cardObject.GetComponent<RectTransform>();
         if (cardRect == null) return;
-        
+
         if (animate)
         {
             isDrawingCard = true; // Mark that we're drawing a card
-            // Debug.Log($"Starting card draw animation for {cardObject.name}. Current hand size: {cardsInHand.Count}");
-            
+                                  // Debug.Log($"Starting card draw animation for {cardObject.name}. Current hand size: {cardsInHand.Count}");
+
             // Start from deck position
             if (deckPosition != null)
             {
@@ -102,10 +102,10 @@ public class CardAnimationManager : MonoBehaviour
                 cardRect.anchoredPosition = new Vector3(300f, 0f, 0f); // Default deck position
                 Debug.Log($"Set {cardObject.name} start position to default deck: {cardRect.anchoredPosition}");
             }
-            
+
             cardRect.localScale = Vector3.zero;
             cardRect.rotation = Quaternion.Euler(0, 0, Random.Range(-drawRotationAmount, drawRotationAmount));
-            
+
             // Animate to hand position
             StartCoroutine(AnimateCardDraw(cardObject));
         }
@@ -114,6 +114,7 @@ public class CardAnimationManager : MonoBehaviour
             // Instant positioning
             PositionCard(cardObject, cardsInHand.Count - 1, false);
         }
+        SFXManager.instance.PlaySFX("Draw");
     }
     
     /// <summary>
@@ -143,7 +144,7 @@ public class CardAnimationManager : MonoBehaviour
             }
         }
     }
-    
+
     /// <summary>
     /// Clears all cards from the hand
     /// </summary>
@@ -151,7 +152,7 @@ public class CardAnimationManager : MonoBehaviour
     {
         // Stop any running animations
         StopAllCoroutines();
-        
+
         cardsInHand.Clear();
         isAnimating = false;
         isDrawingCard = false;

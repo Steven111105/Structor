@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 public class BeamPathTracker
 {
@@ -67,10 +68,12 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
 
     public CardData CardData => cardData;
     public bool CanRotate => cardData?.canRotate ?? true;
+    public TMP_Text boosterText;
 
     public void InitializeGridObject(GridManager manager)
     {
         gridManager = manager;
+        boosterText = transform.GetChild(0).GetComponent<TMP_Text>();
         SetupVisualComponents();
         SetupConnectedSides();
         UpdateVisualRotation();
@@ -251,6 +254,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         {
             connectedSides[i] = (Direction)(((int)connectedSides[i] + 3) % 4); // -1 mod 4
         }
+
         StartCoroutine(LerpRotation());
     }
 
@@ -268,10 +272,17 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         while (elapsed < duration)
         {
             transform.rotation = Quaternion.Lerp(startRot, endRot, elapsed / duration);
+            boosterText.transform.rotation = Quaternion.identity; // Keep text upright
             elapsed += Time.deltaTime;
             yield return null;
         }
         transform.rotation = endRot;
+    }
+
+    public void DisplayBoostedText(bool isMult, float amount)
+    {
+        string text = isMult ? $"x{amount}" : $"+{amount}";
+        boosterText.text = text;
     }
 
     void OnMouseDown()

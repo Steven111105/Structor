@@ -266,7 +266,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         
         return false;
     }
-    
+
     void MarkForDiscard()
     {
         // Update hand size counter (card is gone from hand)
@@ -275,16 +275,17 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
             cardManager.currentHandSize--;
             cardManager.OnCardTrashed();
         }
-        
+
         // Don't use discard or refill hand yet - wait for trash can button click
-        
+
         // Debug.Log($"{cardData.cardName} dragged to trash - card removed (discard pending)");
-        
+
         // Trigger repositioning of remaining cards before destroying this one
         TriggerHandRepositioning();
-        
+
         // Destroy the card immediately
         Destroy(gameObject);
+        SFXManager.instance.PlaySFX("Discard");
     }
     
     public void UnmarkForDiscard()
@@ -380,21 +381,8 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         }
         
         wire.isBoosted = true;
-        
-        // Add visual indicator
-        AddBoosterVisualEffect(wire.gameObject);
-    }
-    
-    void AddBoosterVisualEffect(GameObject wireObject)
-    {
-        // Add a glowing effect or color change to show it's boosted
-        var spriteRenderer = wireObject.GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = Color.yellow; // Or any other visual indicator
-        }
-        
-        // Could also add a particle system or other effects here
+
+        wire.DisplayBoostedText(cardData.isMult, cardData.isMult ? cardData.damageMultiplier : cardData.damageAddition);
     }
     
     /// <summary>

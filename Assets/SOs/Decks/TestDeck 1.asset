@@ -14,7 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardEntries:
   - cardData: {fileID: 11400000, guid: 58d782cf8942e4e41b553dca5bf96167, type: 2}
-    startingQuantity: 1
+    startingQuantity: 2
+  - cardData: {fileID: 11400000, guid: 8b9d4c65fdf6c2c41a38f8f63739efed, type: 2}
+    startingQuantity: 3
+  - cardData: {fileID: 11400000, guid: f0e994db805f24943b8a28acc09ba2b2, type: 2}
+    startingQuantity: 3
   - cardData: {fileID: 11400000, guid: ce191cd3d9c260443b1ced5c290e90d5, type: 2}
-    startingQuantity: 1
+    startingQuantity: 3
   deckDescription: Default deck configuration

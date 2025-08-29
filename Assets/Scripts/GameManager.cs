@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     public int currentAttack = 0;
     public int currentDiscards = 0;
     public int totalDamageDealt = 0;
+    public int coins = 0;
     public bool gameActive = true;
 
     [Header("UI References")]
@@ -58,51 +59,54 @@ public class GameManager : MonoBehaviour
         currentAttack = 0;
         currentDiscards = 0;
         totalDamageDealt = 0;
+        coins = 0;
         gameActive = true;
         // Start with battle
         InitializeBattle();
     }
 
+    [ContextMenu("Initialize Next Battle")]
     void InitializeBattle()
     {
         GridManager.instance.ClearGridObjects();
+        CardManager.instance.ResetCardsAndDeck();
         currentAttack = 0;
         currentDiscards = 0;
         totalDamageDealt = 0;
         gameActive = true;
-        // Deal initial hand of cards
 
+        // Deal initial hand of cards
         CardManager.instance.RefillHandToMaxSize(maxHandSize);
 
         SetQuota(levelIndex);
-        Debug.Log($"Game started! Quota: {damageQuota} damage in {maxAttacks} attacks");
+        Debug.Log($"Game started! Level {levelIndex}, Quota: {damageQuota} damage in {maxAttacks} attacks");
     }
 
     void SetQuota(int levelIndex)
     {
         int startingQuota = 300;
-        int cycleIncrease = 300;
+        int cycleIncrease = 200;
         int cycleIndex = levelIndex / 3;
         int tierIndex = levelIndex % 3;
 
-        float cycleMultiplier;
-        switch (cycleIndex)
+        float tierMultiplier;
+        switch (tierIndex)
         {
             case 0: // Small
-                cycleMultiplier = 1.0f;
+                tierMultiplier = 1.0f;
                 break;
             case 1: // Medium
-                cycleMultiplier = 1.6f;
+                tierMultiplier = 1.5f;
                 break;
             case 2: // Large
-                cycleMultiplier = 2.2f;
+                tierMultiplier = 2f;
                 break;
             default:
-                cycleMultiplier = 1.0f;
+                tierMultiplier = 1.0f;
                 break;
         }
-
-        damageQuota = Mathf.RoundToInt((startingQuota + (cycleIndex * cycleIncrease)) * cycleMultiplier);
+        // (starting quota + (cycleIndex * cycleIncrease)) * cycleMultiplier
+        damageQuota = Mathf.RoundToInt((startingQuota + (cycleIndex * cycleIncrease)) * tierMultiplier);
         // Debug.Log($"[GameManager] Level {levelIndex} - Cycle {cycleIndex} => Quota set to {damageQuota}");
     }
 
@@ -174,6 +178,7 @@ public class GameManager : MonoBehaviour
         }
 
         currentAttack++;
+        SFXManager.instance.PlaySFX("Shoot");
         Debug.Log($"=== ATTACK {currentAttack} ===");
 
         // Reset damage tracking for this attack
@@ -255,8 +260,33 @@ public class GameManager : MonoBehaviour
 
     void ProcessBattleWin()
     {
-        // add round
         levelIndex++;
+
+        CalculateMoneyGained();
+    }
+
+    void CalculateMoneyGained()
+    {
+        int coinsEarned = 0;
+        coinsEarned += currentAttack * 2;
+
+        int extraQuota = totalDamageDealt - damageQuota;
+        int threshold = 20;
+
+        while (extraQuota >= threshold)
+        {
+            coins++;
+            extraQuota -= threshold;
+            threshold *= 3;
+        }
+
+        // Apply coins earned
+        coins += coinsEarned;
+        Debug.Log($"Coins earned: {coinsEarned}, Total coins: {coins}");
+    }
+
+    void ResetRound()
+    {
         
         // reset damage, quota, discard, etc etc
         totalDamageDealt = 0;
@@ -277,8 +307,6 @@ public class GameManager : MonoBehaviour
 
         currentDiscards++;
         Debug.Log($"Card discarded. Discards used: {currentDiscards}/{maxDiscards}");
-
-        // TODO: Implement actual card discard logic
 
         UpdateUI();
     }
