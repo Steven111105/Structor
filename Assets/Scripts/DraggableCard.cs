@@ -4,6 +4,10 @@ using UnityEngine.EventSystems;
 
 public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    // --- Preview Logic ---
+    private GameObject previewObject;
+    private SpriteRenderer previewRenderer;
+    private bool isPreviewActive = false;
     [Header("Card Settings")]
     public CardData cardData;
     
@@ -83,6 +87,12 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             Debug.LogError($"Missing CanvasGroup component on {gameObject.name}");
         }
+        // Hide card UI while dragging (for preview)
+        var image = GetComponent<Image>();
+        if (image != null)
+        {
+            image.enabled = false;
+        }
     }
     
     public void OnDrag(PointerEventData eventData)
@@ -114,6 +124,68 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         
         // Perform the drag operation
         rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
+
+        // --- Grid Preview Logic ---
+        Vector2Int gridPos = gridManager.ScreenToGridPosition(eventData.position);
+        bool isOverGrid = gridManager.IsValidPosition(gridPos);
+        if (isOverGrid)
+        {
+            Vector3 worldPos = gridManager.GridToWorldPosition(gridPos);
+            if (!isPreviewActive)
+            {
+                // Create preview object
+                previewObject = new GameObject("GridPreview");
+                previewRenderer = previewObject.AddComponent<SpriteRenderer>();
+                // Use the actual object sprite from GridManager based on card type
+                switch (cardData.cardType)
+                {
+                    case CardType.StraightWire:
+                        previewRenderer.sprite = gridManager.straightWireSprite;
+                        break;
+                    case CardType.BendWire:
+                        previewRenderer.sprite = gridManager.bendWireSprite;
+                        break;
+                    case CardType.TSplitter:
+                        previewRenderer.sprite = gridManager.tSplitterSprite;
+                        break;
+                    case CardType.Booster:
+                        previewRenderer.sprite = gridManager.boosterSprite;
+                        break;
+                    case CardType.Sensor:
+                        previewRenderer.sprite = gridManager.sensorSprite;
+                        break;
+                    default:
+                        previewRenderer.sprite = cardData.cardSprite;
+                        break;
+                }
+                previewRenderer.color = new Color(1f, 1f, 1f, 0.5f); // semi-transparent
+                previewObject.transform.localScale = Vector3.one * gridManager.cellSize;
+                isPreviewActive = true;
+                // Hide card image only when preview is active
+                var image = GetComponent<Image>();
+                if (image != null)
+                {
+                    image.enabled = false;
+                }
+            }
+            previewObject.transform.position = worldPos;
+        }
+        else
+        {
+            if (isPreviewActive && previewObject != null)
+            {
+                Destroy(previewObject);
+                previewObject = null;
+                previewRenderer = null;
+                isPreviewActive = false;
+            }
+            // Ensure card image is visible again when outside grid
+            var image = GetComponent<Image>();
+            if (image != null)
+            {
+                image.enabled = true;
+            }
+        }
     }
     
     public void OnEndDrag(PointerEventData eventData)
@@ -126,6 +198,20 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             canvasGroup.alpha = 1f;
             canvasGroup.blocksRaycasts = true;
+        }
+        // Restore card UI
+        var image = GetComponent<Image>();
+        if (image != null)
+        {
+            image.enabled = true;
+        }
+        // Destroy preview if active
+        if (isPreviewActive && previewObject != null)
+        {
+            Destroy(previewObject);
+            previewObject = null;
+            previewRenderer = null;
+            isPreviewActive = false;
         }
         
         // Notify hover effect that dragging ended

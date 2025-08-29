@@ -13,7 +13,7 @@ public enum Direction
 
 public enum CardType
 {
-    StraightWire, BendWire, TSplitter, Booster, Sensor
+    StraightWire, BendWire, TSplitter, Booster, Sensor, CPU, SuperCPU, SolarPanel, OverclockModule, QuantumProcessor
 }
 
 public class GridManager : MonoBehaviour
@@ -192,7 +192,7 @@ public class GridManager : MonoBehaviour
         }
     }
     
-    bool IsValidPosition(Vector2Int position)
+    public bool IsValidPosition(Vector2Int position)
     {
         return position.x >= 0 && position.x < gridWidth && 
                position.y >= 0 && position.y < gridHeight;
@@ -267,28 +267,21 @@ public class GridManager : MonoBehaviour
         {
             case CardType.StraightWire:
                 spriteRenderer.sprite = straightWireSprite;
-                spriteRenderer.color = Color.blue;
                 break;
             case CardType.BendWire:
                 spriteRenderer.sprite = bendWireSprite;
-                spriteRenderer.color = Color.green;
                 break;
             case CardType.TSplitter:
                 spriteRenderer.sprite = tSplitterSprite;
-                spriteRenderer.color = Color.yellow;
                 break;
             case CardType.Booster:
                 spriteRenderer.sprite = boosterSprite;
-                spriteRenderer.color = Color.cyan;
                 break;
             case CardType.Sensor:
                 spriteRenderer.sprite = sensorSprite;
-                spriteRenderer.color = Color.red;
-                break;
-            default:
-                spriteRenderer.color = Color.white;
                 break;
         }
+        spriteRenderer.color = Color.white;
     }
     
     public Vector3 GridToWorldPosition(Vector2Int gridPos)
