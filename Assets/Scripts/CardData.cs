@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 [CreateAssetMenu(fileName = "New Card", menuName = "Game/Card Data")]
 public class CardData : ScriptableObject
 {
@@ -15,7 +16,6 @@ public class CardData : ScriptableObject
 
     [Header("Damage Settings")]
     public int baseDamage = 20; // Damage from passing wire
-    public int sensorValue = 10; // For sensors only
 
     [Header("Booster Settings")]
     public float damageMultiplier = 0f; // For boosters only: 1.5f = +50%, 2.0f = x2 damage

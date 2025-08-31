@@ -14,32 +14,15 @@ public class SFX
 public class SFXManager : MonoBehaviour
 {
     public static SFXManager instance;
-
+    public AudioSource bgmSource;
+    public AudioClip battleBGM;
+    public AudioClip shopBGM;
+    public AudioClip gameOverBGM;
     public List<SFX> sfxList;
 
     void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        instance = this;
     }
 
     public void PlaySFX(string clipName)
@@ -58,4 +41,47 @@ public class SFXManager : MonoBehaviour
             Debug.Log("Could not find SFX clip: " + clipName);
         }
     }
+
+    public void FadeToShopBGM()
+    {
+        StartCoroutine(FadeBGM(shopBGM));
+    }
+
+    public void FadeToBattleBGM()
+    {
+        StartCoroutine(FadeBGM(battleBGM));
+    }
+
+    public void FadeToGameOverBGM()
+    {
+        StartCoroutine(FadeBGM(gameOverBGM));
+    }
+
+    IEnumerator FadeBGM(AudioClip newClip)
+    {
+        // Fade out current BGM
+        float fadeDuration = 0.5f;
+        float startVolume = bgmSource.volume;
+
+        for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+        {
+            bgmSource.volume = Mathf.Lerp(startVolume, 0, t / fadeDuration);
+            yield return null;
+        }
+
+        bgmSource.volume = 0;
+        bgmSource.clip = newClip;
+        bgmSource.Play();
+
+        // Fade in new BGM
+        for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+        {
+            bgmSource.volume = Mathf.Lerp(0, startVolume, t / fadeDuration);
+            yield return null;
+        }
+
+        bgmSource.volume = startVolume;
+    }
+
+
 }

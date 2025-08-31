@@ -72,11 +72,32 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
 
     public void InitializeGridObject(GridManager manager)
     {
+        Debug.Log($"Initializing GridObject at {gridPosition} with CardType: {cardData.cardType}");
         gridManager = manager;
         boosterText = transform.GetChild(0).GetComponent<TMP_Text>();
+        SetAnimation();
         SetupVisualComponents();
         SetupConnectedSides();
         UpdateVisualRotation();
+    }
+
+    void SetAnimation()
+    {
+        switch (cardData.cardType)
+        {
+            case CardType.CPU:
+                // Set animator to CPU animation
+                Debug.Log("Setting cpu anim");
+                GetComponent<Animator>().Play("CPU");
+                break;
+            case CardType.SuperCPU:
+                GetComponent<Animator>().Play("SuperCPU");
+                break;
+            default:
+                // deactivate animator
+                GetComponent<Animator>().enabled = false;
+                break;
+        }
     }
 
     void SetupVisualComponents()
@@ -200,7 +221,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     {
         if (!connectedSides.Contains(incomingDirection))
         {
-            Debug.Log($"[{name}] REJECTED wire: {incomingDirection} not a connected side");
+            // Debug.Log($"[{name}] REJECTED wire: {incomingDirection} not a connected side");
             return;
         }
         // Apply booster effects if this wire is boosted
@@ -220,6 +241,10 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         Debug.Log($"[{name}] SENSOR HIT! Received {damage} damage from {incomingDirection}");
         Debug.Log(tracker.GetPathString());
         int contribution = Mathf.RoundToInt(damage);
+        if (GameManager.instance.isSignalInterference)
+        {
+            contribution = Mathf.RoundToInt(contribution * 0.8f); // Example: reduce contribution by 20%
+        }
         GameManager.instance.OnSensorHit(contribution);
     }
 

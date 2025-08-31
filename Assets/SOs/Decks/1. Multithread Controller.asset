@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0577ecd5cea405d4fb25a2b5b3ec6552, type: 3}
-  m_Name: TestDeck
+  m_Name: 1. Multithread Controller
   m_EditorClassIdentifier: 
   cardEntries:
   - cardData: {fileID: 11400000, guid: 8b9d4c65fdf6c2c41a38f8f63739efed, type: 2}
@@ -20,13 +20,22 @@ MonoBehaviour:
   - cardData: {fileID: 11400000, guid: f0e994db805f24943b8a28acc09ba2b2, type: 2}
     startingQuantity: 3
   - cardData: {fileID: 11400000, guid: 58d782cf8942e4e41b553dca5bf96167, type: 2}
+    startingQuantity: 1
+  - cardData: {fileID: 11400000, guid: a1a907172fde9574e8ed0cb5dfee8aed, type: 2}
     startingQuantity: 2
-  - cardData: {fileID: 11400000, guid: f326415b81a01904db387c9a51e5abec, type: 2}
-    startingQuantity: 2
-  - cardData: {fileID: 11400000, guid: 578b2c38cfd20db45a40b1c75c6c6b14, type: 2}
-    startingQuantity: 2
-  - cardData: {fileID: 11400000, guid: 50d8802edeeb384409280d9284102f10, type: 2}
-    startingQuantity: 2
-  - cardData: {fileID: 11400000, guid: d683833357c429047a1eb73c93fc66a6, type: 2}
-    startingQuantity: 2
-  deckDescription: Default deck configuration
+  middleShooter: {fileID: 11400000, guid: a1a907172fde9574e8ed0cb5dfee8aed, type: 2}
+  deckName: Multithread Controller
+  deckDescription: 'Chain processors together for steady power output, growing stronger
+    with every connection. at had some cards.
+
+
+    - 3 Straight Wires
+
+    - 3 Bend
+    Wires
+
+    - 3 T-Splitter Wires
+
+    - 2 CPU
+
+    - 1 Output Port'

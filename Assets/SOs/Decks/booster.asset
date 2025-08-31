@@ -19,4 +19,6 @@ MonoBehaviour:
     startingQuantity: 1
   - cardData: {fileID: 11400000, guid: f0e994db805f24943b8a28acc09ba2b2, type: 2}
     startingQuantity: 1
+  middleShooter: {fileID: 11400000, guid: a1a907172fde9574e8ed0cb5dfee8aed, type: 2}
+  deckName: New Deck
   deckDescription: Default deck configuration

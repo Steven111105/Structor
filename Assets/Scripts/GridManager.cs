@@ -23,28 +23,25 @@ public class GridManager : MonoBehaviour
     public int gridWidth = 15;
     public int gridHeight = 11;
     public float cellSize = 1f;
-    
-    [Header("CPU Settings")]
-    public float baseDamage = 75f;
 
     [Header("Sprites")]
     public Sprite cpuSprite;
     public Sprite straightWireSprite;
     public Sprite bendWireSprite;
-    public Sprite rightBendWireSprite;
     public Sprite tSplitterSprite;
     public Sprite boosterSprite;
     public Sprite sensorSprite;
-    
+
     // Grid storage
     private IBeamReceiver[,] grid;
     private Vector2Int cpuPosition;
+    public List<Vector2Int> cpuPositions = new List<Vector2Int>(); // Track all CPU positions
 
     public GameObject gridObjectPrefab;
 
     void Awake()
     {
-        if(instance == null)
+        if (instance == null)
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
@@ -55,70 +52,82 @@ public class GridManager : MonoBehaviour
             return;
         }
     }
-    void Start()
-    {
-        InitializeGrid();
-        SetupCPU();
-    }
-    
-    void InitializeGrid()
+    public void InitializeGrid()
     {
         grid = new IBeamReceiver[gridWidth, gridHeight];
         cpuPosition = new Vector2Int(gridWidth / 2, gridHeight / 2); // Center position
+        cpuPositions.Clear(); // Clear all CPUs when loading a new battle
+        SetupCPU(); // Always ensure CPU is set up
     }
-    
+
+
     void SetupCPU()
     {
-
         CreateCPUVisual();
+        cpuPositions.Add(cpuPosition); // Track all CPU positions
     }
-    
+
     void CreateCPUVisual()
     {
-        // Remove existing CPU visual if it exists
-        GameObject existingCPU = GameObject.Find("CPU");
-        if (existingCPU != null)
-        {
-            DestroyImmediate(existingCPU);
-        }
-        
-        // Create CPU GameObject
-        GameObject cpuObj = new GameObject("CPU");
+        // Spawn CPU using prefab
+        GameObject cpuObj = Instantiate(gridObjectPrefab);
+        cpuObj.name = "CPU";
         cpuObj.transform.position = GridToWorldPosition(cpuPosition);
         cpuObj.transform.SetParent(transform); // Make it a child of GridManager
-        
-        // Scale CPU to match cell size like everything else
         cpuObj.transform.localScale = Vector3.one * cellSize;
-        
-        // Add 2D visual representation
-        SpriteRenderer spriteRenderer = cpuObj.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = cpuSprite;
-        // spriteRenderer.color = Color.yellow;
-        spriteRenderer.sortingOrder = 3; // Higher than other objects
-        
-        // Add a tag for identification
+
+        CardData cpuCardData = null;
+        // Get the middle shooter card type from the deck
+        switch (SelectedDeckData.instance.selectedDeck.middleShooter.cardType)
+        {
+            case CardType.CPU:
+            case CardType.SuperCPU:
+                cpuCardData = SelectedDeckData.instance.selectedDeck.middleShooter;
+                break;
+            default:
+                Debug.LogWarning("Middle shooter is not a CPU type! Defaulting to CPU.");
+                break;
+        }
+
+        var gridObj = cpuObj.GetComponent<GridObject>();
+        gridObj.cardData = cpuCardData;
+        Debug.Log($"CPU Card Type: {cpuCardData.cardType}");
+        gridObj.gridPosition = cpuPosition;
+        gridObj.transform.localRotation = Quaternion.identity;
+        gridObj.InitializeGridObject(this);
+
+        cpuObj.GetComponent<SpriteRenderer>().sortingOrder = 1; // Higher than other objects
         cpuObj.tag = "CPU";
-        
-        // Debug.Log($"CPU visual created at world position: {cpuObj.transform.position}");
     }
-    
+
     public void FireBeams()
     {
-        Debug.Log("=== FIRING BEAMS FROM CPU ===");
-        //include tracers
-
-        // Fire beams in all 4 directions from CPU
-        FireBeamInDirection(Direction.North);
-        FireBeamInDirection(Direction.South);
-        FireBeamInDirection(Direction.East);
-        FireBeamInDirection(Direction.West);
+        Debug.Log("=== FIRING BEAMS FROM ALL CPUs ===");
+        // Fire beams in all 4 directions from every CPU
+        // get the card data from the grid object to get the base cpu damage
+        float baseDamage = 0f;
+        foreach (var cpuPos in cpuPositions)
+        {
+            GridObject gridObj = GetGridObject(cpuPos); // Assume first CPU for damage reference
+            if (gridObj != null && gridObj.cardData != null)
+            {
+                baseDamage = gridObj.cardData.baseDamage;
+                baseDamage = gridObj.cardData.baseDamage;
+            }
+        }
+        foreach (var cpuPos in cpuPositions)
+        {
+            FireBeamInDirection(Direction.North, cpuPos, baseDamage);
+            FireBeamInDirection(Direction.South, cpuPos, baseDamage);
+            FireBeamInDirection(Direction.East, cpuPos, baseDamage);
+            FireBeamInDirection(Direction.West, cpuPos, baseDamage);
+        }
     }
-    
-    void FireBeamInDirection(Direction direction)
+
+    void FireBeamInDirection(Direction direction, Vector2Int cpuPos, float baseDamage)
     {
-        Vector2Int targetPos = GetPositionInDirection(cpuPosition, direction);
-        // Debug.Log($"[CPU] Firing beam {direction} from {cpuPosition} to {targetPos}");
-        
+        Vector2Int targetPos = GetPositionInDirection(cpuPos, direction);
+        // Debug.Log($"[CPU] Firing beam {direction} from {cpuPos} to {targetPos}");
         if (IsValidPosition(targetPos))
         {
             var target = grid[targetPos.x, targetPos.y];
@@ -141,33 +150,25 @@ public class GridManager : MonoBehaviour
                         break;
                 }
             }
-            else
-            {
-                // Debug.Log($"[CPU] No target found at {targetPos}");
-            }
         }
         else
         {
             Debug.Log($"[CPU] Invalid position {targetPos}");
         }
-        
-    // If you want to handle beam firing, call a method here directly
-    // Example: GameManager.Instance.OnBeamFired(baseDamage, targetPos, direction);
-    // Or remove if not needed
     }
-    
+
     public IBeamReceiver GetNeighbor(Vector2Int position, Direction direction)
     {
         Vector2Int neighborPos = GetPositionInDirection(position, direction);
-        
+
         if (IsValidPosition(neighborPos))
         {
             return grid[neighborPos.x, neighborPos.y];
         }
-        
+
         return null;
     }
-    
+
     public GridObject GetGridObject(Vector2Int position)
     {
         if (IsValidPosition(position))
@@ -176,7 +177,7 @@ public class GridManager : MonoBehaviour
         }
         return null;
     }
-    
+
     Vector2Int GetPositionInDirection(Vector2Int position, Direction direction)
     {
         switch (direction)
@@ -193,13 +194,13 @@ public class GridManager : MonoBehaviour
                 return position;
         }
     }
-    
+
     public bool IsValidPosition(Vector2Int position)
     {
-        return position.x >= 0 && position.x < gridWidth && 
+        return position.x >= 0 && position.x < gridWidth &&
                position.y >= 0 && position.y < gridHeight;
     }
-    
+
     public bool PlaceObject(Vector2Int position, IBeamReceiver obj)
     {
         // Check if position is within grid bounds
@@ -207,23 +208,23 @@ public class GridManager : MonoBehaviour
         {
             return false;
         }
-        
+
         // Check if position is already occupied
         if (grid[position.x, position.y] != null)
         {
             return false;
         }
-        
+
         // Check if trying to place at CPU position (blocked for player objects)
         if (position == cpuPosition)
         {
             Debug.Log($"Cannot place object at CPU position {cpuPosition}");
             return false;
         }
-        
+
         // Place the object in the single cell
         grid[position.x, position.y] = obj;
-        
+
         // Assign sprite to the GridObject if it's a GridObject
         if (obj is GridObject gridObject)
         {
@@ -231,14 +232,14 @@ public class GridManager : MonoBehaviour
             // Update visual rotation after sprite assignment to ensure proper orientation
             gridObject.UpdateVisualRotation();
         }
-        
+
         return true;
     }
-    
+
     public void AssignSpriteToGridObject(GridObject gridObject)
     {
         if (gridObject.cardData == null) return;
-        
+
         // Check if there's already a visual child (created by QuickTestSetup)
         Transform existingVisual = null;
         foreach (Transform child in gridObject.transform)
@@ -249,13 +250,13 @@ public class GridManager : MonoBehaviour
                 break;
             }
         }
-        
+
         // If there's an existing visual child, don't add another SpriteRenderer
         if (existingVisual != null)
         {
             return; // Keep the existing visual setup
         }
-        
+
         // Get or create SpriteRenderer on main object
         SpriteRenderer spriteRenderer = gridObject.GetComponent<SpriteRenderer>();
         if (spriteRenderer == null)
@@ -263,7 +264,7 @@ public class GridManager : MonoBehaviour
             spriteRenderer = gridObject.gameObject.AddComponent<SpriteRenderer>();
             spriteRenderer.sortingOrder = 1;
         }
-        
+
         // Assign the correct sprite based on card type
         switch (gridObject.cardData.cardType)
         {
@@ -276,46 +277,43 @@ public class GridManager : MonoBehaviour
             case CardType.TSplitter:
                 spriteRenderer.sprite = tSplitterSprite;
                 break;
-            case CardType.Booster:
-                spriteRenderer.sprite = boosterSprite;
-                break;
             case CardType.Sensor:
                 spriteRenderer.sprite = sensorSprite;
                 break;
         }
         spriteRenderer.color = Color.white;
     }
-    
+
     public Vector3 GridToWorldPosition(Vector2Int gridPos)
     {
         // Center the grid around the GridManager's position
         // For a 15x11 grid, center is at (7,5), so we offset by that amount
         float offsetX = cpuPosition.x * cellSize;
         float offsetY = cpuPosition.y * cellSize;
-        
+
         Vector3 worldPos = new Vector3(
             (gridPos.x * cellSize) - offsetX,
             (gridPos.y * cellSize) - offsetY,
             0
         );
-        
+
         return transform.position + worldPos;
     }
-    
+
     public Vector2Int WorldToGridPosition(Vector3 worldPos)
     {
         // Convert world position back to grid coordinates
         Vector3 localPos = worldPos - transform.position;
-        
+
         float offsetX = cpuPosition.x * cellSize;
         float offsetY = cpuPosition.y * cellSize;
-        
+
         return new Vector2Int(
             Mathf.RoundToInt((localPos.x + offsetX) / cellSize),
             Mathf.RoundToInt((localPos.y + offsetY) / cellSize)
         );
     }
-    
+
     public Vector2Int ScreenToGridPosition(Vector3 screenPos)
     {
         // Convert screen position (like mouse position) to grid coordinates
@@ -323,7 +321,7 @@ public class GridManager : MonoBehaviour
         worldPos.z = 0; // Ensure we're working in 2D
         return WorldToGridPosition(worldPos);
     }
-    
+
     void Update()
     {
         // Debug: Show grid position under mouse (remove this after testing)
@@ -333,14 +331,14 @@ public class GridManager : MonoBehaviour
         //     Vector3 worldPos = GridToWorldPosition(gridPos);
         //     Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         //     mouseWorldPos.z = 0;
-            
+
         //     Debug.Log($"Mouse clicked at:");
         //     Debug.Log($"  Screen: {Input.mousePosition}");
         //     Debug.Log($"  Mouse World: {mouseWorldPos}");
         //     Debug.Log($"  Grid Position: {gridPos}");
         //     Debug.Log($"  Grid World Position: {worldPos}");
         //     Debug.Log($"  GridManager Position: {transform.position}");
-            
+
         //     // Also show what's at that position
         //     var gridObj = GetGridObject(gridPos);
         //     if (gridObj != null)
@@ -352,14 +350,14 @@ public class GridManager : MonoBehaviour
         //         Debug.Log("  No object at this position");
         //     }
         // }
-        
+
         // // Test beam firing with spacebar
         // if (Input.GetKeyDown(KeyCode.Space))
         // {
         //     FireBeams();
         // }
     }
-    
+
     // Visual debugging - draw grid in scene view
     void OnDrawGizmos()
     {
@@ -367,12 +365,12 @@ public class GridManager : MonoBehaviour
         Gizmos.color = Color.white;
         Vector3 gridSize = new Vector3(gridWidth * cellSize, gridHeight * cellSize, 0);
         Gizmos.DrawWireCube(transform.position, gridSize);
-        
+
         // Draw CPU position
         Gizmos.color = Color.yellow;
         Vector3 cpuWorldPos = GridToWorldPosition(cpuPosition);
         Gizmos.DrawWireCube(cpuWorldPos, Vector3.one * cellSize * 0.8f);
-        
+
         // Draw grid cells
         Gizmos.color = Color.gray;
         for (int x = 0; x < gridWidth; x++)
@@ -384,12 +382,12 @@ public class GridManager : MonoBehaviour
             }
         }
     }
-    
+
     // Object Creation Methods
-    public GridObject CreateGridObject(string baseName, CardType cardType, Vector2Int position)
+    public GridObject CreateGridObject(CardData cardData, Vector2Int position)
     {
         GameObject obj = Instantiate(gridObjectPrefab);
-        obj.name = $"{baseName}_{position.x}_{position.y}";
+        obj.name = $"{cardData.cardName}_{position.x}_{position.y}";
 
         // Parent the object to the GridManager for organization
         obj.transform.SetParent(transform);
@@ -398,23 +396,31 @@ public class GridManager : MonoBehaviour
 
         // Create minimal CardData
         CardData testCard = ScriptableObject.CreateInstance<CardData>();
-        testCard.cardName = baseName;
-        testCard.cardType = cardType;
-        testCard.canRotate = cardType != CardType.Sensor && cardType != CardType.Booster; // Sensors and Boosters typically don't rotate
-        
+        testCard.cardName = cardData.cardName;
+        testCard.cardType = cardData.cardType;
+        testCard.canRotate = cardData.canRotate;
+        testCard.baseDamage = cardData.baseDamage;
+
         gridObj.cardData = testCard;
         gridObj.gridPosition = position;
         gridObj.transform.localRotation = Quaternion.identity;
 
         // Explicitly set input direction to South BEFORE any rotation/visual setup
         gridObj.InitializeGridObject(this);
-        
+
         // Position in world - this already accounts for GridManager's position
         obj.transform.position = GridToWorldPosition(position);
-        
+
         // Scale the object to match the cell size
         obj.transform.localScale = Vector3.one * cellSize;
-        
+
+        // If this is a CPU card, add to cpuPositions and log
+        if (cardData.cardType == CardType.CPU || cardData.cardType == CardType.SuperCPU)
+        {
+            cpuPositions.Add(position);
+            Debug.Log($"[CPU] Added extra CPU at {position} by card");
+        }
+
         // Add to grid - this will automatically handle sprite assignment
         bool placed = PlaceObject(position, gridObj);
         if (!placed)
@@ -439,107 +445,13 @@ public class GridManager : MonoBehaviour
             }
         }
         grid = new IBeamReceiver[gridWidth, gridHeight];
+        cpuPositions.Clear();
     }
     
-    // Testing and Debug Methods
-    [ContextMenu("Create Test Wires")]
-    public void CreateTestWires()
+    public void DestroySelf()
     {
-        // Create test setup - CPU is at (7,5)
-        // Path: CPU -West-> Straight -West-> RightBend -North-> Straight -North-> LeftBend -West-> Sensor
-        CreateGridObject("TestStraightWire", CardType.StraightWire, new Vector2Int(6, 5)); // West of CPU: East input → West output
-        CreateGridObject("TestRightBendWire", CardType.BendWire, new Vector2Int(5, 5)); // Right turn: East input → North output  
-        CreateGridObject("TestStraightWire", CardType.StraightWire, new Vector2Int(5, 6)); // Vertical: South input → North output
-        CreateGridObject("TestLeftBendWire", CardType.BendWire, new Vector2Int(5, 7)); // Left turn: South input → West output
-        CreateGridObject("TestSensor", CardType.Sensor, new Vector2Int(4, 7)); // Target for beam
-        
-        Debug.Log("Test setup created! Path: CPU(7,5) -West-> Straight(6,5) -West-> RightBend(5,5) -North-> Straight(5,6) -North-> LeftBend(5,7) -West-> Sensor(4,7)");
-        Debug.Log("Press SPACE to fire beams");
+        instance = null;
+        Destroy(gameObject);
     }
     
-    [ContextMenu("Create Test T-Splitter")]
-    public void CreateTestTSplitterOnly()
-    {
-        // Create T-splitter test setup - CPU is at (7,5)
-        // Path: CPU -West-> T-Splitter -North-> Sensor1
-        //                             -South-> Sensor2
-        
-        // Place T-splitter directly west of CPU
-        CreateGridObject("TestTSplitter", CardType.TSplitter, new Vector2Int(6, 5)); // T-splitter with default direction
-        
-        // Place sensors at both T-splitter outputs
-        CreateGridObject("TestSensor", CardType.Sensor, new Vector2Int(6, 6)); // North output sensor
-        CreateGridObject("TestSensor", CardType.Sensor, new Vector2Int(6, 4)); // South output sensor
-        
-        Debug.Log("Created T-splitter test setup:");
-        Debug.Log("CPU(7,5) -West-> T-Splitter(6,5) splits to:");
-        Debug.Log("  - North output -> Sensor(6,6)");
-        Debug.Log("  - South output -> Sensor(6,4)");
-        Debug.Log("T-splitter has default direction. Press SPACE to fire beams!");
-    }
-    
-    [ContextMenu("Test Fire Beams")]
-    public void TestFireBeams()
-    {
-        Debug.Log("=== FIRING TEST BEAMS ===");
-        FireBeams();
-    }
-    
-    [ContextMenu("Clear All Test Objects")]
-    public void ClearAllTestObjects()
-    {
-        // Find and destroy all test objects
-        GameObject[] testObjects = GameObject.FindGameObjectsWithTag("Untagged");
-        foreach (GameObject obj in testObjects)
-        {
-            if (obj.name.StartsWith("Test"))
-            {
-                DestroyImmediate(obj);
-            }
-        }
-        Debug.Log("Cleared all test objects");
-    }
-    
-    [ContextMenu("Debug Wire States")]
-    public void DebugWireStates()
-    {
-        // Find all test wires and show their current input directions
-        GridObject[] allGridObjects = FindObjectsOfType<GridObject>();
-        Debug.Log("=== WIRE STATES ===");
-        foreach (GridObject gridObj in allGridObjects)
-        {
-            if (gridObj.name.StartsWith("Test"))
-            {
-                Vector3 arrowPos = Vector3.zero;
-                Transform arrow = gridObj.transform.Find("OutputArrow");
-                if (arrow != null)
-                {
-                    arrowPos = arrow.localPosition;
-                }
-            }
-        }
-    }
-    
-    [ContextMenu("Debug Grid State")]
-    public void DebugGridState()
-    {
-        Debug.Log($"=== GRID DEBUG ===");
-        Debug.Log($"Grid size: {gridWidth}x{gridHeight}");
-        Debug.Log($"Cell size: {cellSize}");
-        Debug.Log($"GridManager position: {transform.position}");
-        
-        // Check CPU position in world space
-        Vector2Int cpuGridPos = new Vector2Int(7, 5);
-        Vector3 cpuWorldPos = GridToWorldPosition(cpuGridPos);
-        Debug.Log($"CPU grid pos: {cpuGridPos}, world pos: {cpuWorldPos}");
-        
-        // Check test positions
-        Vector2Int wirePos = new Vector2Int(6, 5);
-        Vector3 wireWorldPos = GridToWorldPosition(wirePos);
-        Debug.Log($"Wire grid pos: {wirePos}, world pos: {wireWorldPos}");
-        
-        Vector2Int sensorPos = new Vector2Int(4, 5);
-        Vector3 sensorWorldPos = GridToWorldPosition(sensorPos);
-        Debug.Log($"Sensor grid pos: {sensorPos}, world pos: {sensorWorldPos}");
-    }
 }

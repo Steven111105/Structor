@@ -148,9 +148,6 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
                     case CardType.TSplitter:
                         previewRenderer.sprite = gridManager.tSplitterSprite;
                         break;
-                    case CardType.Booster:
-                        previewRenderer.sprite = gridManager.boosterSprite;
-                        break;
                     case CardType.Sensor:
                         previewRenderer.sprite = gridManager.sensorSprite;
                         break;
@@ -159,6 +156,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
                         break;
                 }
                 previewRenderer.color = new Color(1f, 1f, 1f, 0.5f); // semi-transparent
+                previewRenderer.sortingOrder = 3; // Set preview sorting layer
                 previewObject.transform.localScale = Vector3.one * gridManager.cellSize;
                 isPreviewActive = true;
                 // Hide card image only when preview is active
@@ -224,8 +222,18 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         // Check if dropped on trash can first
         if (CheckDroppedOnTrashCan(eventData.position))
         {
-            MarkForDiscard();
-            return;
+            if (GameManager.instance.CanDiscard())
+            {
+                MarkForDiscard();
+                return;
+            }
+            else
+            {
+                // max discard reached
+                Debug.Log("Max Discard Reached");
+                rectTransform.anchoredPosition = startPosition;
+                return;
+            }
         }
         
         // Convert screen position to grid position
@@ -313,7 +321,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         if (cardData == null || gridManager == null) return false;
         
         // Check if this is a booster card
-        if (cardData.cardType == CardType.Booster)
+        if (cardData.cardType == CardType.Booster && GameManager.instance.isBoostersBlock == false)
         {
             return TryApplyBooster(gridPosition);
         }
@@ -432,7 +440,7 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     bool PlaceRegularTile(Vector2Int gridPosition)
     {
         // Create the grid object using GridManager's method
-        var gridObject = gridManager.CreateGridObject(cardData.cardName, cardData.cardType, gridPosition);
+        var gridObject = gridManager.CreateGridObject(cardData, gridPosition);
         
         if (gridObject != null)
         {

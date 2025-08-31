@@ -13,8 +13,10 @@ public class DeckConfiguration : ScriptableObject
     
     [Header("Deck Composition")]
     public CardEntry[] cardEntries;
+    public CardData middleShooter;
     
     [Header("Deck Info")]
+    public string deckName = "New Deck";
     [TextArea(2, 4)]
     public string deckDescription = "Default deck configuration";
     

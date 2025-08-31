@@ -14,10 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: T-Splitter
   cardType: 2
-  cardSprite: {fileID: 1034613429, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
+  cardSprite: {fileID: -85935407, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
   canRotate: 1
-  baseDamage: 20
-  sensorValue: 0
+  baseDamage: 10
   damageMultiplier: 1
   damageAddition: 0
   isMult: 0

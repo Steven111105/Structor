@@ -30,12 +30,7 @@ public class GameUI : MonoBehaviour
             gameManager.attackCounterText = attackCounterText;
             gameManager.damageCounterText = damageCounterText;
             gameManager.discardCounterText = discardCounterText;
-            gameManager.quotaText = quotaText;
             gameManager.attackButton = attackButton;
-            
-            // Setup event listeners
-            gameManager.OnGameWon.AddListener(ShowShopPanel);
-            gameManager.OnGameLost.AddListener(ShowDefeatPanel);
         }
         
         // Setup reset button

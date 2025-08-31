@@ -13,14 +13,11 @@ public class CardManager : MonoBehaviour
     public DeckConfiguration deckConfig; // Assign your deck configuration SO
 
     [Header("Runtime Deck")]
-    private List<CardData> runtimeDeck = new List<CardData>();
-    private List<CardData> currentDeckComposition = new List<CardData>(); // The evolved deck with shop purchases
-    private DeckConfiguration originalDeckConfig; // Only used for initial setup
+    [SerializeField] private List<CardData> runtimeDeck = new List<CardData>();
+    [SerializeField] private List<CardData> currentDeckComposition = new List<CardData>(); // The evolved deck with shop purchases
 
     [Header("Deck Status")]
-    [SerializeField] private int originalDeckSize = 0;
     [SerializeField] private int currentDeckSize = 0;
-    [SerializeField] private bool autoRefillWhenEmpty = true;
 
     [Header("Hand Management")]
     public int currentHandSize = 0;
@@ -29,53 +26,16 @@ public class CardManager : MonoBehaviour
 
     void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        instance = this;
     }
 
-    void Start()
-    {
-        InitializeDeck();
-        // Don't auto-fill hand - let GameManager control this
-        // SetupInitialHand();
-    }
-
-    void InitializeDeck()
+    public void InitializeDeck()
     {
         runtimeDeck.Clear();
         currentDeckComposition.Clear();
+        deckConfig = SelectedDeckData.instance.selectedDeck;
 
-        if (deckConfig != null && deckConfig.cardEntries != null)
-        {
-            Debug.Log("Initializing deck from DeckConfiguration...");
-            originalDeckConfig = deckConfig; // Store reference to original config
-
-            // Build runtime deck from configuration
-            runtimeDeck = deckConfig.BuildDeck();
-            // Also store this as the current deck composition that will evolve
-            currentDeckComposition = new List<CardData>(runtimeDeck);
-
-            originalDeckSize = runtimeDeck.Count;
-            // Debug.Log($"Runtime deck initialized with {runtimeDeck.Count} cards");
-            // Debug.Log($"Deck composition:\n{deckConfig.GetDeckSummary()}");
-        }
-        else
-        {
-            Debug.Log("No deck configuration found, creating default deck...");
-        }
-
-        currentDeckSize = runtimeDeck.Count;
-
-        // Shuffle the deck
-        ShuffleDeck();
+        LoadOriginalDeck();
     }
 
     void ShuffleDeck()
@@ -98,26 +58,21 @@ public class CardManager : MonoBehaviour
     {
         if (currentDeckComposition.Count > 0)
         {
-            Debug.Log("Refilling deck from current deck composition (including shop purchases)...");
+            Debug.Log("Resetting deck to current composition...");
 
-            // Add the current deck contents back
-            var newCards = new List<CardData>(currentDeckComposition);
-            runtimeDeck.AddRange(newCards);
-
-            // Shuffle the refilled deck
+            runtimeDeck.Clear();
+            runtimeDeck = new List<CardData>(currentDeckComposition);
             ShuffleDeck();
 
-            Debug.Log($"Deck refilled! Now contains {runtimeDeck.Count} cards");
-            Debug.Log($"Added {newCards.Count} cards from current deck composition");
+            Debug.Log($"Deck reset! Contains {runtimeDeck.Count} cards");
         }
         else
         {
-            Debug.LogWarning("Cannot refill deck - no deck composition available!");
+            Debug.LogWarning("Cannot reset deck - no deck composition available!");
         }
     }
 
-    // Method to reset deck to current composition (clear and rebuild from current deck)
-    public void ResetDeckToCurrentComposition()
+    void LoadCurrentDeckComposition()
     {
         if (currentDeckComposition.Count > 0)
         {
@@ -136,16 +91,16 @@ public class CardManager : MonoBehaviour
     }
 
     // Method to reset deck to original configuration (for new game)
-    public void ResetDeckToOriginal()
+    public void LoadOriginalDeck()
     {
-        if (originalDeckConfig != null)
+        if (deckConfig != null)
         {
             Debug.Log("Resetting deck to original configuration (new game)...");
 
             runtimeDeck.Clear();
             currentDeckComposition.Clear();
 
-            runtimeDeck = originalDeckConfig.BuildDeck();
+            runtimeDeck = deckConfig.BuildDeck();
             currentDeckComposition = new List<CardData>(runtimeDeck);
             ShuffleDeck();
 
@@ -160,13 +115,11 @@ public class CardManager : MonoBehaviour
 
     public void RefillHandToMaxSize(int maxHandSize)
     {
-        // Debug.Log($"[CardManager] RefillHandToMaxSize called with maxHandSize: {maxHandSize}");
-
         // Ensure deck is initialized if this is called before Start()
         if (runtimeDeck.Count == 0 && (deckConfig != null || currentDeckComposition.Count == 0))
         {
             // Debug.Log("[CardManager] Deck not initialized yet, initializing now...");
-            InitializeDeck();
+            RefillDeck();
         }
 
         if (cardHandParent == null)
@@ -181,15 +134,10 @@ public class CardManager : MonoBehaviour
             return;
         }
 
-        if (runtimeDeck.Count == 0)
-        {
-            Debug.LogWarning("[CardManager] Runtime deck is empty! Cannot draw more cards.");
-            return;
-        }
-
         // Count current cards in hand
+        Debug.Log($"Current child in hand = {cardHandParent.childCount}");
         currentHandSize = cardHandParent.childCount;
-        // Debug.Log($"[CardManager] Current hand size: {currentHandSize}, target: {maxHandSize}");
+        Debug.Log($"[CardManager] Current hand size: {currentHandSize}, target: {maxHandSize}");
 
         // Collect cards to draw for batch animation
         List<CardData> cardsToCreate = new List<CardData>();
@@ -283,7 +231,7 @@ public class CardManager : MonoBehaviour
     {
         if (runtimeDeck.Count == 0)
         {
-            if (autoRefillWhenEmpty && currentDeckComposition.Count > 0)
+            if (currentDeckComposition.Count > 0)
             {
                 Debug.Log("Deck is empty - auto-refilling from current deck composition...");
                 RefillDeck();
@@ -314,8 +262,8 @@ public class CardManager : MonoBehaviour
     // Method to add cards back to the deck (for power-ups, rewards, etc.)
     public void AddCardToDeck(CardData cardData)
     {
-        runtimeDeck.Add(cardData);
-        currentDeckSize = runtimeDeck.Count;
+        currentDeckComposition.Add(cardData);
+        currentDeckSize = currentDeckComposition.Count;
         Debug.Log($"Added {cardData.cardName} to deck. Deck now has {currentDeckSize} cards.");
     }
 
@@ -360,56 +308,6 @@ public class CardManager : MonoBehaviour
         return currentDeckSize;
     }
 
-    // Method to get original deck size
-    public int GetOriginalDeckSize()
-    {
-        return originalDeckSize;
-    }
-
-    // Method to get deck statistics
-    public string GetDeckStats()
-    {
-        if (originalDeckConfig != null)
-        {
-            return $"Deck: {currentDeckSize} cards remaining\nComposition: {currentDeckComposition.Count} total cards (evolved)\nOriginal: {originalDeckConfig.name}";
-        }
-        else
-        {
-            return $"Deck: {currentDeckSize} cards remaining\nComposition: {currentDeckComposition.Count} total cards (evolved)\nOriginal: Legacy/Default";
-        }
-    }
-
-    // Method to get current deck composition summary
-    public string GetCurrentDeckComposition()
-    {
-        var cardCounts = new Dictionary<string, int>();
-
-        foreach (var card in currentDeckComposition)
-        {
-            if (card != null)
-            {
-                if (cardCounts.ContainsKey(card.cardName))
-                {
-                    cardCounts[card.cardName]++;
-                }
-                else
-                {
-                    cardCounts[card.cardName] = 1;
-                }
-            }
-        }
-
-        var summary = new System.Text.StringBuilder();
-        summary.AppendLine($"Current Deck Composition ({currentDeckComposition.Count} cards):");
-
-        foreach (var kvp in cardCounts)
-        {
-            summary.AppendLine($"- {kvp.Value}x {kvp.Key}");
-        }
-
-        return summary.ToString();
-    }
-
     GameObject CreateCard(CardData cardData)
     {
         // Instantiate the card prefab
@@ -450,26 +348,6 @@ public class CardManager : MonoBehaviour
         {
             cardIcon.sprite = cardData.cardSprite;
         }
-
-        // Color coding for different card types
-        var cardBackground = card.GetComponent<Image>();
-        if (cardBackground != null)
-        {
-            switch (cardData.cardType)
-            {
-                case CardType.StraightWire:
-                case CardType.BendWire:
-                case CardType.TSplitter:
-                    cardBackground.color = Color.white; // Wire cards
-                    break;
-                case CardType.Booster:
-                    cardBackground.color = Color.yellow; // Booster cards
-                    break;
-                case CardType.Sensor:
-                    cardBackground.color = Color.green; // Sensor cards
-                    break;
-            }
-        }
     }
 
     // Call this to add a new card to the hand
@@ -482,26 +360,34 @@ public class CardManager : MonoBehaviour
     public void ClearHand()
     {
         // Use animation manager if available
-        var animationManager = FindObjectOfType<CardAnimationManager>();
-        if (animationManager != null)
-        {
-            animationManager.ClearHand();
-        }
-
+        CardAnimationManager.instance.ClearHand();
+        // dont question it, it works cuz somehow foreach didnt destroy them all
         foreach (Transform child in cardHandParent)
         {
-            Destroy(child.gameObject);
+            DestroyImmediate(child.gameObject);
         }
-
+        foreach (Transform child in cardHandParent)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+        foreach (Transform child in cardHandParent)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+        foreach (Transform child in cardHandParent)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+        foreach (Transform child in cardHandParent)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+        foreach (Transform child in cardHandParent)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+        Debug.Log($"Hand cleared, child in parent {cardHandParent.childCount}");
         currentHandSize = 0;
-    }
-
-    // Call this to refill the hand with available cards
-    public void RefillHand()
-    {
-        ClearHand();
-        // Don't auto-setup hand - use RefillHandToMaxSize instead
-        Debug.LogWarning("RefillHand() is deprecated. Use RefillHandToMaxSize(maxSize) instead.");
     }
 
     // DISCARD SYSTEM METHODS
@@ -576,6 +462,11 @@ public class CardManager : MonoBehaviour
     public void ResetCardsAndDeck()
     {
         ClearHand();
-        InitializeDeck();
+        LoadCurrentDeckComposition();
+    }
+
+    void OnDestroy()
+    {
+        instance = null;
     }
 }

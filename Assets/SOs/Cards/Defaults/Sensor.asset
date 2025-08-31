@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: Sensor
   cardType: 4
-  cardSprite: {fileID: -399870541, guid: 7d547ee1c6a5a8944befdd02c550f53c, type: 3}
+  cardSprite: {fileID: -1738675557, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
   canRotate: 0
   baseDamage: 20
   sensorValue: 50

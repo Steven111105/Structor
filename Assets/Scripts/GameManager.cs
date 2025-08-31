@@ -2,12 +2,12 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
-    public EventSystem ResetGameEvent;
-    int levelIndex;
+    public int levelIndex;
     [Header("Game Settings")]
     public int maxHandSize = 5;
     public int maxAttacks = 3;
@@ -22,29 +22,31 @@ public class GameManager : MonoBehaviour
     public bool gameActive = true;
 
     [Header("UI References")]
-    public TextMeshProUGUI attackCounterText;
-    public TextMeshProUGUI damageCounterText;
-    public TextMeshProUGUI discardCounterText;
-    public TextMeshProUGUI quotaText;
+    public TMP_Text attackCounterText;
+    public TMP_Text damageCounterText;
+    public TMP_Text discardCounterText;
     public Button attackButton;
+    public TMP_Text debuffText;
 
-    // Events
-    public UnityEngine.Events.UnityEvent OnGameWon = new UnityEngine.Events.UnityEvent();
-    public UnityEngine.Events.UnityEvent OnGameLost = new UnityEngine.Events.UnityEvent();
-    public UnityEngine.Events.UnityEvent OnAttackComplete = new UnityEngine.Events.UnityEvent();
+    public GameObject battlePanel;
+    public GameObject gameOverPanel;
+    int highestDamage;
+    bool isLoading = false;
+
+    // Signal interf 20% less atack
+    // Memory fragmentation max hand -1 (temporary)
+    // System uodate (discard all after attack)
+    // Energy Drain (1st card doesnt do anything) //maybe scrap
+    // Boosters block (cant use boosters)
+
+    public bool isSignalInterference = false;
+    public bool isMemoryFragmentation = false;
+    public bool isSystemUpdate = false;
+    public bool isBoostersBlock = false;
 
     void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        instance = this;
     }
     void Start()
     {
@@ -62,24 +64,49 @@ public class GameManager : MonoBehaviour
         coins = 0;
         gameActive = true;
         // Start with battle
+        CardManager.instance.InitializeDeck();
         InitializeBattle();
     }
 
     [ContextMenu("Initialize Next Battle")]
-    void InitializeBattle()
+    public void InitializeBattle()
     {
-        GridManager.instance.ClearGridObjects();
+        if (isLoading) return;
+        isSignalInterference = false;
+        isMemoryFragmentation = false;
+        isSystemUpdate = false;
+        isBoostersBlock = false;
+        isLoading = true;
+        ShopManager.instance.HideShopPanel();
+        GridManager.instance.InitializeGrid();
         CardManager.instance.ResetCardsAndDeck();
         currentAttack = 0;
         currentDiscards = 0;
         totalDamageDealt = 0;
         gameActive = true;
-
-        // Deal initial hand of cards
-        CardManager.instance.RefillHandToMaxSize(maxHandSize);
-
         SetQuota(levelIndex);
+
+        Invoke(nameof(OpenBattleScreen), 1f);
+        SFXManager.instance.FadeToBattleBGM();
+    }
+
+    void OpenBattleScreen()
+    {
+        battlePanel.SetActive(true);
+        ShopManager.instance.HideShopPanel();
+        if (isMemoryFragmentation)
+        {
+            // Deal initial hand of cards
+            CardManager.instance.RefillHandToMaxSize(maxHandSize - 1);
+        }
+        else
+        {
+            CardManager.instance.RefillHandToMaxSize(maxHandSize);
+
+        }
+
         Debug.Log($"Game started! Level {levelIndex}, Quota: {damageQuota} damage in {maxAttacks} attacks");
+        isLoading = false;
     }
 
     void SetQuota(int levelIndex)
@@ -94,12 +121,15 @@ public class GameManager : MonoBehaviour
         {
             case 0: // Small
                 tierMultiplier = 1.0f;
+                debuffText.text = "";
                 break;
             case 1: // Medium
                 tierMultiplier = 1.5f;
+                debuffText.text = "";
                 break;
             case 2: // Large
                 tierMultiplier = 2f;
+                SetDebuff();
                 break;
             default:
                 tierMultiplier = 1.0f;
@@ -108,6 +138,37 @@ public class GameManager : MonoBehaviour
         // (starting quota + (cycleIndex * cycleIncrease)) * cycleMultiplier
         damageQuota = Mathf.RoundToInt((startingQuota + (cycleIndex * cycleIncrease)) * tierMultiplier);
         // Debug.Log($"[GameManager] Level {levelIndex} - Cycle {cycleIndex} => Quota set to {damageQuota}");
+    }
+
+    void SetDebuff()
+    {
+        int random = Random.Range(0, 4);
+        switch (random)
+        {
+            case 0:
+                isSignalInterference = true;
+                Debug.Log("Signal Interference! Max attacks reduced by 20%");
+                debuffText.text = "Current Debuff:\nSignal Interference\nOutput is reduced by 20%";
+                break;
+            case 1:
+                isMemoryFragmentation = true;
+                Debug.Log("Memory Fragmentation! Max hand size reduced by 1");
+                debuffText.text = "Current Debuff:\nMemory Fragmentation\nMax hand size reduced by 1";
+                break;
+            case 2:
+                isSystemUpdate = true;
+                Debug.Log("System Update! All cards will be discarded after each attack");
+                debuffText.text = "Current Debuff:\nSystem Update\nAll cards discarded after each attack";
+                break;
+            case 3:
+                isBoostersBlock = true;
+                Debug.Log("Boosters Block! Cannot use booster cards this round");
+                debuffText.text = "Current Debuff:\nBoosters Block\nCannot use booster cards this round";
+                break;
+            default:
+                break;
+        }
+
     }
 
     void SetupEventListeners()
@@ -128,17 +189,12 @@ public class GameManager : MonoBehaviour
 
         if (damageCounterText != null)
         {
-            damageCounterText.text = $"Damage: {totalDamageDealt}/{damageQuota}";
+            damageCounterText.text = $"{totalDamageDealt}/{damageQuota}";
         }
 
         if (discardCounterText != null)
         {
             discardCounterText.text = $"Discards: {currentDiscards}/{maxDiscards}";
-        }
-
-        if (quotaText != null)
-        {
-            quotaText.text = $"Target: {damageQuota}";
         }
 
         // Update button states
@@ -208,9 +264,6 @@ public class GameManager : MonoBehaviour
 
         // Update UI
         UpdateUI();
-
-        // Fire event
-        OnAttackComplete?.Invoke();
     }
 
     public void NextTurn()
@@ -222,9 +275,21 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log("=== NEXT TURN ===");
-
+        if (isSystemUpdate)
+        {
+            Debug.Log("Clearing hand");
+            CardManager.instance.ClearHand();
+        }
         // Refill hand to max size
-        CardManager.instance.RefillHandToMaxSize(maxHandSize);
+        Debug.Log($"Refilling hand from {CardManager.instance.currentHandSize} to {maxHandSize}");
+        if (isMemoryFragmentation)
+        {
+            CardManager.instance.RefillHandToMaxSize(maxHandSize - 1);
+        }
+        else
+        {
+            CardManager.instance.RefillHandToMaxSize(maxHandSize);
+        }
 
         // Debug.Log($"Hand refilled. Turn {currentAttack + 1} ready.");
     }
@@ -254,7 +319,7 @@ public class GameManager : MonoBehaviour
             gameActive = false;
             Debug.Log("=== DEFEAT! ===");
             Debug.Log($"Quota failed! Only {totalDamageDealt}/{damageQuota} damage dealt in {maxAttacks} attacks");
-            OnGameLost?.Invoke();
+            gameOverPanel.GetComponent<GameOverManager>().ShowGameOverScreen();
         }
     }
 
@@ -263,38 +328,46 @@ public class GameManager : MonoBehaviour
         levelIndex++;
 
         CalculateMoneyGained();
+        Invoke(nameof(OpenShop), 1f);
+        SFXManager.instance.FadeToShopBGM();
     }
 
     void CalculateMoneyGained()
     {
         int coinsEarned = 0;
-        coinsEarned += currentAttack * 2;
+        coinsEarned += (maxAttacks - currentAttack) * 2;
 
         int extraQuota = totalDamageDealt - damageQuota;
         int threshold = 20;
 
         while (extraQuota >= threshold)
         {
-            coins++;
+            coinsEarned += 1;
             extraQuota -= threshold;
             threshold *= 3;
         }
 
         // Apply coins earned
         coins += coinsEarned;
-        Debug.Log($"Coins earned: {coinsEarned}, Total coins: {coins}");
+        Debug.Log($"Coins earned: {coinsEarned} ({(maxAttacks - currentAttack) * 2} from attack), Total coins: {coins}");
+    }
+
+    void OpenShop()
+    {
+        ShopManager.instance.ShowShopPanel();
+        gameOverPanel.SetActive(false);
+
+        ResetRound();
     }
 
     void ResetRound()
     {
-        
+
         // reset damage, quota, discard, etc etc
         totalDamageDealt = 0;
         currentAttack = 0;
         currentDiscards = 0;
-
-        // Open shop panel
-        // ShopManager.instance.ShowShopPanel();
+        GridManager.instance.ClearGridObjects();
     }
 
     public void DiscardCard()
@@ -348,6 +421,16 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Discards: {currentDiscards}/{maxDiscards}");
         Debug.Log($"Game Active: {gameActive}");
         Debug.Log($"Hand Size: {maxHandSize}");
+    }
+
+    public bool CanDiscard()
+    {
+        return gameActive && currentDiscards < maxDiscards;
+    }
+
+    void OnDestroy()
+    {
+        instance = null;
     }
 }
 
