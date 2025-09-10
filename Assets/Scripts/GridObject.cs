@@ -9,6 +9,9 @@ public class BeamPathTracker
 
     public BeamPathTracker()
     {
+        // Start with an empty path and visited set
+        path.Clear();
+        visited.Clear();
     }
 
     // Copy constructor for cloning

@@ -13,7 +13,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
     public float animationSpeed = 0.2f;
     
     private CardAnimationManager animationManager;
-    private bool isHovering = false;
     private bool isBeingDragged = false;
     private Coroutine currentHoverCoroutine;
     private Vector3 basePosition; // The card's base position
@@ -53,7 +52,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
         // Don't hover if cards are being repositioned by animation manager
         if (animationManager != null && animationManager.IsRepositioning()) return;
         
-        isHovering = true;
         
         // Stop any existing hover animation first
         if (currentHoverCoroutine != null)
@@ -96,7 +94,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
         // Don't process hover exit if cards are being repositioned
         if (animationManager != null && animationManager.IsRepositioning()) return;
         
-        isHovering = false;
         
         // Stop any existing hover animation first
         if (currentHoverCoroutine != null)
@@ -123,7 +120,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
     {
         isBeingDragged = true;
         anyCardBeingDragged = true; // Set global flag
-        isHovering = false;
         
         // Stop any hover animation when dragging starts
         if (currentHoverCoroutine != null)
@@ -161,7 +157,6 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
         anyCardBeingDragged = false; // Clear global flag
         
         // Keep card in normal state after drag - no hover checking
-        isHovering = false;
         if (currentHoverCoroutine != null)
         {
             StopCoroutine(currentHoverCoroutine);
