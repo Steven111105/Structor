@@ -4,7 +4,8 @@ using TMPro;
 using UnityEngine;
 public class BeamPathTracker
 {
-    private List<Vector2Int> path = new List<Vector2Int>();
+    public List<Vector2Int> path = new List<Vector2Int>();
+    public List<int> damages = new List<int>();
     private HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
 
     public BeamPathTracker()
@@ -12,6 +13,7 @@ public class BeamPathTracker
         // Start with an empty path and visited set
         path.Clear();
         visited.Clear();
+        damages.Clear();
     }
 
     // Copy constructor for cloning
@@ -19,6 +21,7 @@ public class BeamPathTracker
     {
         path = new List<Vector2Int>(other.path);
         visited = new HashSet<Vector2Int>(other.visited);
+        damages = new List<int>(other.damages);
     }
 
     public bool HasVisited(Vector2Int pos)
@@ -26,10 +29,11 @@ public class BeamPathTracker
         return visited.Contains(pos);
     }
 
-    public void MarkVisited(Vector2Int pos)
+    public void MarkVisited(Vector2Int pos, int damage = 0)
     {
         visited.Add(pos);
         path.Add(pos);
+        damages.Add(damage);
     }
 
     public string GetPathString()
@@ -39,6 +43,7 @@ public class BeamPathTracker
         for (int i = 0; i < path.Count; i++)
         {
             sb.Append(path[i]);
+            sb.Append(damages[i].ToString());
             if (i < path.Count - 1)
                 sb.Append(" -> ");
         }
@@ -46,7 +51,7 @@ public class BeamPathTracker
     }
 }
 
-public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
+public class GridObject : MonoBehaviour
 {
     [Header("Grid Object Settings")]
     public CardData cardData;
@@ -60,8 +65,6 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     public float damageAddition = 0f;
     public bool isBoosted = false;
 
-    public GridManager gridManager;
-
     // IGridItem implementation
     public Vector2Int GridPosition
     {
@@ -73,10 +76,9 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
     public bool CanRotate => cardData?.canRotate ?? true;
     public TMP_Text boosterText;
 
-    public void InitializeGridObject(GridManager manager)
+    public void InitializeGridObject()
     {
         Debug.Log($"Initializing GridObject at {gridPosition} with CardType: {cardData.cardType}");
-        gridManager = manager;
         boosterText = transform.GetChild(0).GetComponent<TMP_Text>();
         SetAnimation();
         SetupVisualComponents();
@@ -110,6 +112,14 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             BoxCollider2D collider2D = gameObject.AddComponent<BoxCollider2D>();
             collider2D.size = Vector2.one;
         }
+
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+        }
+        spriteRenderer.sprite = cardData.gridObjectSprite;
+        Debug.Log($"Set sprite for {cardData.cardName} at {gridPosition}");
     }
 
     // Set up connected sides based on card type
@@ -158,7 +168,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
             return;
         }
-        tracker.MarkVisited(gridPosition);
+        // tracker.MarkVisited(gridPosition);
         ProcessBeam(damage, Direction.North, tracker);
     }
 
@@ -169,7 +179,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
             return;
         }
-        tracker.MarkVisited(gridPosition);
+        // tracker.MarkVisited(gridPosition);
         ProcessBeam(damage, Direction.South, tracker);
     }
 
@@ -180,7 +190,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
             return;
         }
-        tracker.MarkVisited(gridPosition);
+        // tracker.MarkVisited(gridPosition);
         ProcessBeam(damage, Direction.East, tracker);
     }
 
@@ -191,7 +201,6 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             Debug.Log($"[TRACKER REJECTED] Already visited {gridPosition}");
             return;
         }
-        tracker.MarkVisited(gridPosition);
         ProcessBeam(damage, Direction.West, tracker);
     }
 
@@ -203,15 +212,16 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             return;
         }
         damage += cardData.baseDamage;
+        tracker.MarkVisited(gridPosition, Mathf.RoundToInt(damage));
 
         // Debug.Log($"[{name}] RECEIVED beam {damage} from {incomingDirection}, type: {cardData.cardType.ToString()}");
 
         switch (cardData.cardType)
         {
             case CardType.StraightWire:
-            case CardType.BendWire: // Now just "Bend"
+            case CardType.BendWire:
             case CardType.TSplitter:
-                ProcessBidirectionalWire(damage, incomingDirection, tracker);
+                ProcessNextWire(damage, incomingDirection, tracker);
                 break;
             case CardType.Sensor:
                 ProcessSensor(damage, tracker, incomingDirection);
@@ -219,8 +229,7 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
         }
     }
 
-    // Bidirectional wire logic
-    void ProcessBidirectionalWire(float damage, Direction incomingDirection, BeamPathTracker tracker)
+    void ProcessNextWire(float damage, Direction incomingDirection, BeamPathTracker tracker)
     {
         if (!connectedSides.Contains(incomingDirection))
         {
@@ -249,11 +258,12 @@ public class GridObject : MonoBehaviour, IBeamReceiver, IGridItem
             contribution = Mathf.RoundToInt(contribution * 0.8f); // Example: reduce contribution by 20%
         }
         GameManager.instance.OnSensorHit(contribution);
+        GridManager.instance.successfulBeamPaths.Add(tracker);
     }
 
     void PassBeamToNeighbor(float damage, Direction direction, BeamPathTracker tracker)
     {
-        var neighbor = gridManager.GetNeighbor(gridPosition, direction);
+        var neighbor = GridManager.instance.GetNeighbor(gridPosition, direction);
         if (neighbor != null)
         {
             switch (direction)

@@ -15,6 +15,7 @@ MonoBehaviour:
   cardName: CPU
   cardType: 5
   cardSprite: {fileID: 1116901470, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  gridObjectSprite: {fileID: -513351815, guid: 3319890985e83ae428cb0abea20c5bd5, type: 3}
   canRotate: 0
   baseDamage: 75
   damageMultiplier: 0

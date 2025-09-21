@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public enum Direction
@@ -24,18 +25,11 @@ public class GridManager : MonoBehaviour
     public int gridHeight = 11;
     public float cellSize = 1f;
 
-    [Header("Sprites")]
-    public Sprite cpuSprite;
-    public Sprite straightWireSprite;
-    public Sprite bendWireSprite;
-    public Sprite tSplitterSprite;
-    public Sprite boosterSprite;
-    public Sprite sensorSprite;
-
     // Grid storage
-    private IBeamReceiver[,] grid;
+    private GridObject[,] grid;
     private Vector2Int cpuPosition;
     public List<Vector2Int> cpuPositions = new List<Vector2Int>(); // Track all CPU positions
+    public List<BeamPathTracker> successfulBeamPaths = new List<BeamPathTracker>();
 
     public GameObject gridObjectPrefab;
 
@@ -54,51 +48,13 @@ public class GridManager : MonoBehaviour
     }
     public void InitializeGrid()
     {
-        grid = new IBeamReceiver[gridWidth, gridHeight];
+        grid = new GridObject[gridWidth, gridHeight];
         cpuPosition = new Vector2Int(gridWidth / 2, gridHeight / 2); // Center position
         cpuPositions.Clear(); // Clear all CPUs when loading a new battle
-        SetupCPU(); // Always ensure CPU is set up
+        // make middle CPU
+        CreateGridObject(SelectedDeckData.instance.selectedDeck.middleShooter, cpuPosition);
     }
 
-
-    void SetupCPU()
-    {
-        CreateCPUVisual();
-        cpuPositions.Add(cpuPosition); // Track all CPU positions
-    }
-
-    void CreateCPUVisual()
-    {
-        // Spawn CPU using prefab
-        GameObject cpuObj = Instantiate(gridObjectPrefab);
-        cpuObj.name = "CPU";
-        cpuObj.transform.position = GridToWorldPosition(cpuPosition);
-        cpuObj.transform.SetParent(transform); // Make it a child of GridManager
-        cpuObj.transform.localScale = Vector3.one * cellSize;
-
-        CardData cpuCardData = null;
-        // Get the middle shooter card type from the deck
-        switch (SelectedDeckData.instance.selectedDeck.middleShooter.cardType)
-        {
-            case CardType.CPU:
-            case CardType.SuperCPU:
-                cpuCardData = SelectedDeckData.instance.selectedDeck.middleShooter;
-                break;
-            default:
-                Debug.LogWarning("Middle shooter is not a CPU type! Defaulting to CPU.");
-                break;
-        }
-
-        var gridObj = cpuObj.GetComponent<GridObject>();
-        gridObj.cardData = cpuCardData;
-        Debug.Log($"CPU Card Type: {cpuCardData.cardType}");
-        gridObj.gridPosition = cpuPosition;
-        gridObj.transform.localRotation = Quaternion.identity;
-        gridObj.InitializeGridObject(this);
-
-        cpuObj.GetComponent<SpriteRenderer>().sortingOrder = 1; // Higher than other objects
-        cpuObj.tag = "CPU";
-    }
 
     public void FireBeams()
     {
@@ -108,19 +64,20 @@ public class GridManager : MonoBehaviour
         float baseDamage = 0f;
         foreach (var cpuPos in cpuPositions)
         {
+            Debug.Log($"[CPU] Firing beams from CPU at {cpuPos}");
             GridObject gridObj = GetGridObject(cpuPos); // Assume first CPU for damage reference
-            if (gridObj != null && gridObj.cardData != null)
+            if (gridObj != null)
             {
                 baseDamage = gridObj.cardData.baseDamage;
-                baseDamage = gridObj.cardData.baseDamage;
+                FireBeamInDirection(Direction.North, cpuPos, baseDamage);
+                FireBeamInDirection(Direction.South, cpuPos, baseDamage);
+                FireBeamInDirection(Direction.East, cpuPos, baseDamage);
+                FireBeamInDirection(Direction.West, cpuPos, baseDamage);
             }
-        }
-        foreach (var cpuPos in cpuPositions)
-        {
-            FireBeamInDirection(Direction.North, cpuPos, baseDamage);
-            FireBeamInDirection(Direction.South, cpuPos, baseDamage);
-            FireBeamInDirection(Direction.East, cpuPos, baseDamage);
-            FireBeamInDirection(Direction.West, cpuPos, baseDamage);
+            else
+            {
+                Debug.LogError($"No GridObject found at CPU position {cpuPos}");
+            }
         }
     }
 
@@ -157,7 +114,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public IBeamReceiver GetNeighbor(Vector2Int position, Direction direction)
+    public GridObject GetNeighbor(Vector2Int position, Direction direction)
     {
         Vector2Int neighborPos = GetPositionInDirection(position, direction);
 
@@ -173,8 +130,9 @@ public class GridManager : MonoBehaviour
     {
         if (IsValidPosition(position))
         {
-            return grid[position.x, position.y] as GridObject;
+            return grid[position.x, position.y];
         }
+        Debug.Log("Position out of bounds: " + position);
         return null;
     }
 
@@ -201,7 +159,7 @@ public class GridManager : MonoBehaviour
                position.y >= 0 && position.y < gridHeight;
     }
 
-    public bool PlaceObject(Vector2Int position, IBeamReceiver obj)
+    public bool PlaceObject(Vector2Int position, GridObject obj)
     {
         // Check if position is within grid bounds
         if (!IsValidPosition(position))
@@ -212,13 +170,6 @@ public class GridManager : MonoBehaviour
         // Check if position is already occupied
         if (grid[position.x, position.y] != null)
         {
-            return false;
-        }
-
-        // Check if trying to place at CPU position (blocked for player objects)
-        if (position == cpuPosition)
-        {
-            Debug.Log($"Cannot place object at CPU position {cpuPosition}");
             return false;
         }
 
@@ -240,23 +191,6 @@ public class GridManager : MonoBehaviour
     {
         if (gridObject.cardData == null) return;
 
-        // Check if there's already a visual child (created by QuickTestSetup)
-        Transform existingVisual = null;
-        foreach (Transform child in gridObject.transform)
-        {
-            if (child.name.Contains("Visual"))
-            {
-                existingVisual = child;
-                break;
-            }
-        }
-
-        // If there's an existing visual child, don't add another SpriteRenderer
-        if (existingVisual != null)
-        {
-            return; // Keep the existing visual setup
-        }
-
         // Get or create SpriteRenderer on main object
         SpriteRenderer spriteRenderer = gridObject.GetComponent<SpriteRenderer>();
         if (spriteRenderer == null)
@@ -269,16 +203,10 @@ public class GridManager : MonoBehaviour
         switch (gridObject.cardData.cardType)
         {
             case CardType.StraightWire:
-                spriteRenderer.sprite = straightWireSprite;
-                break;
             case CardType.BendWire:
-                spriteRenderer.sprite = bendWireSprite;
-                break;
             case CardType.TSplitter:
-                spriteRenderer.sprite = tSplitterSprite;
-                break;
             case CardType.Sensor:
-                spriteRenderer.sprite = sensorSprite;
+                spriteRenderer.sprite = gridObject.cardData.gridObjectSprite;
                 break;
         }
         spriteRenderer.color = Color.white;
@@ -358,6 +286,73 @@ public class GridManager : MonoBehaviour
         // }
     }
 
+    public IEnumerator ShowSuccessfulBeamPaths()
+    {
+        float duration = 0.5f; // Duration to show each damage text
+        foreach (BeamPathTracker tracker in successfulBeamPaths)
+        {
+            Vector2Int[] path = tracker.path.ToArray();
+            Debug.Log($"Processiong beam path: {string.Join(" -> ", path)}");
+            int index = 0;
+            foreach (Vector2Int pos in path)
+            {
+                // Create a text object at each position in the path
+                Debug.Log($"Created damage text at {pos} for {tracker.damages[index]} damage");
+                yield return StartCoroutine(CreateDamageText(pos, tracker.damages[index], duration));
+                index++;
+            }
+        }
+        successfulBeamPaths.Clear(); // Clear after displaying
+        yield return new WaitForSeconds(1f); // Wait a moment to let player see the texts
+        yield return null;
+    }
+
+    IEnumerator CreateDamageText(Vector2Int gridPos, int damage, float duration)
+    {
+        // Create a new GameObject for the text
+        GameObject textObj = new GameObject("DamageText");
+        textObj.transform.SetParent(transform);
+
+        // Position it at the center of the grid cell
+        textObj.transform.position = GridToWorldPosition(gridPos) + new Vector3(0, 0, -1); // Slightly in front
+        textObj.transform.localScale = Vector3.one * 0.003f; // Scale down for world space
+
+        TMP_Text text = textObj.AddComponent<TextMeshProUGUI>();
+        Debug.Log($"Added TMP_Text component at {textObj.transform.position}");
+        text.text = damage.ToString();
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 24;
+        text.fontSizeMax = 50;
+        text.fontSize = 64;
+        text.color = Color.red;
+        text.alignment = TextAlignmentOptions.Center;
+        textObj.GetComponent<RectTransform>().sizeDelta = new Vector2(90, 90);
+
+        yield return StartCoroutine(TextBounce(text,duration));
+    }
+
+    IEnumerator TextBounce(TMP_Text text, float duration)
+    {
+        float elapsed = 0f;
+        Vector3 originalScale = text.transform.localScale;
+        Vector3 targetScale = new Vector3(0.01f, 0.01f, 0.01f); // Scale down to 1%
+
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            // Bounce effect using sine wave
+            float scale = Mathf.Sin(t * Mathf.PI);
+            text.transform.localScale = Vector3.Lerp(originalScale, targetScale, scale);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure it ends at original scale
+        text.transform.localScale = originalScale;
+
+        // Destroy the text object after animation
+        Destroy(text.gameObject);
+    }
     // Visual debugging - draw grid in scene view
     void OnDrawGizmos()
     {
@@ -383,7 +378,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // Object Creation Methods
+    // Create Grid Objects
     public GridObject CreateGridObject(CardData cardData, Vector2Int position)
     {
         GameObject obj = Instantiate(gridObjectPrefab);
@@ -395,18 +390,14 @@ public class GridManager : MonoBehaviour
         GridObject gridObj = obj.GetComponent<GridObject>();
 
         // Create minimal CardData
-        CardData testCard = ScriptableObject.CreateInstance<CardData>();
-        testCard.cardName = cardData.cardName;
-        testCard.cardType = cardData.cardType;
-        testCard.canRotate = cardData.canRotate;
-        testCard.baseDamage = cardData.baseDamage;
+        CardData testCard = cardData.Clone();
 
         gridObj.cardData = testCard;
         gridObj.gridPosition = position;
         gridObj.transform.localRotation = Quaternion.identity;
 
         // Explicitly set input direction to South BEFORE any rotation/visual setup
-        gridObj.InitializeGridObject(this);
+        gridObj.InitializeGridObject();
 
         // Position in world - this already accounts for GridManager's position
         obj.transform.position = GridToWorldPosition(position);
@@ -429,7 +420,10 @@ public class GridManager : MonoBehaviour
             DestroyImmediate(obj);
             return null;
         }
-        SFXManager.instance.PlaySFX("Deploy");
+        if(position != cpuPosition)
+        {
+            SFXManager.instance.PlaySFX("Deploy");
+        }
         // Debug.Log($"Created {baseName} at grid {position}, world {obj.transform.position}");
         return gridObj;
     }
@@ -444,7 +438,7 @@ public class GridManager : MonoBehaviour
                 Destroy(child.gameObject);
             }
         }
-        grid = new IBeamReceiver[gridWidth, gridHeight];
+        grid = new GridObject[gridWidth, gridHeight];
         cpuPositions.Clear();
     }
     

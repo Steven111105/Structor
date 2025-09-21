@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     public TMP_Text attackCounterText;
     public TMP_Text damageCounterText;
     public TMP_Text discardCounterText;
+    public TMP_Text moneyText;
     public Button attackButton;
     public TMP_Text debuffText;
 
@@ -93,6 +94,7 @@ public class GameManager : MonoBehaviour
     void OpenBattleScreen()
     {
         battlePanel.SetActive(true);
+        moneyText.text = coins.ToString();
         ShopManager.instance.HideShopPanel();
         if (isMemoryFragmentation)
         {
@@ -176,7 +178,7 @@ public class GameManager : MonoBehaviour
         // Setup UI button listeners
         if (attackButton != null)
         {
-            attackButton.onClick.AddListener(ExecuteAttack);
+            attackButton.onClick.AddListener(() => StartCoroutine(ExecuteAttack()));
         }
     }
 
@@ -218,19 +220,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void ExecuteAttack()
+    public IEnumerator ExecuteAttack()
     {
         if (!gameActive || currentAttack >= maxAttacks)
         {
             Debug.Log("Cannot attack - game over or max attacks reached");
-            return;
+            yield break;
         }
 
         // Check if there are cards pending discard
         if (CardManager.instance.GetMarkedForDiscardCount() > 0)
         {
             Debug.Log("Cannot attack - there are cards pending discard. Please confirm or cancel discards first.");
-            return;
+            yield break;
         }
 
         currentAttack++;
@@ -241,17 +243,20 @@ public class GameManager : MonoBehaviour
         int damageThisAttack = 0;
 
         // Execute the attack through GridManager
-        if (GridManager.instance != null)
-        {
-            // Track damage before firing
-            int damageBeforeAttack = totalDamageDealt;
 
-            GridManager.instance.FireBeams();
+        // Track damage before firing
+        int damageBeforeAttack = totalDamageDealt;
 
-            // Calculate damage dealt this attack
-            damageThisAttack = totalDamageDealt - damageBeforeAttack;
-            Debug.Log($"Attack {currentAttack} dealt {damageThisAttack} damage");
-        }
+        GridManager.instance.FireBeams();
+
+        Debug.Log("Calling ShowSuccessfulBeamPaths and waiting for it to complete...");
+        yield return StartCoroutine(GridManager.instance.ShowSuccessfulBeamPaths());
+        Debug.Log("Calling ShowSuccessfulBeamPaths and waiting for it to complete... DONE");
+
+
+        // Calculate damage dealt this attack
+        damageThisAttack = totalDamageDealt - damageBeforeAttack;
+        Debug.Log($"Attack {currentAttack} dealt {damageThisAttack} damage");
 
         // Check win/lose conditions
         CheckGameState();
@@ -264,6 +269,17 @@ public class GameManager : MonoBehaviour
 
         // Update UI
         UpdateUI();
+        yield return null;
+    }
+
+    public void ShowAttackPreview()
+    {
+        if (!gameActive || currentAttack >= maxAttacks)
+        {
+            return;
+        }
+
+        
     }
 
     public void NextTurn()
@@ -297,7 +313,6 @@ public class GameManager : MonoBehaviour
     public void OnSensorHit(int damage)
     {
         totalDamageDealt += damage;
-        // Debug.Log($"Sensor hit! +{damage} damage. Total: {totalDamageDealt}/{damageQuota}");
 
         // Update UI immediately when damage is dealt
         UpdateUI();
@@ -349,6 +364,7 @@ public class GameManager : MonoBehaviour
 
         // Apply coins earned
         coins += coinsEarned;
+        moneyText.text = coins.ToString();
         Debug.Log($"Coins earned: {coinsEarned} ({(maxAttacks - currentAttack) * 2} from attack), Total coins: {coins}");
     }
 

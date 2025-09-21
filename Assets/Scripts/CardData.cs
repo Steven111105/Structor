@@ -10,6 +10,7 @@ public class CardData : ScriptableObject
 
     [Header("Visuals")]
     public Sprite cardSprite;
+    public Sprite gridObjectSprite; // Sprite used when placed on the grid
 
     [Header("Gameplay")]
     public bool canRotate = true; // Some items might be fixed orientation
@@ -21,4 +22,19 @@ public class CardData : ScriptableObject
     public float damageMultiplier = 0f; // For boosters only: 1.5f = +50%, 2.0f = x2 damage
     public float damageAddition = 0f; // For boosters only: 1.5f = +50%, 2.0f = x2 damage
     public bool isMult = false;
+
+    public CardData Clone()
+    {
+        CardData clone = ScriptableObject.CreateInstance<CardData>();
+        clone.cardName = cardName;
+        clone.cardType = cardType;
+        clone.cardSprite = cardSprite;
+        clone.gridObjectSprite = gridObjectSprite;
+        clone.canRotate = canRotate;
+        clone.baseDamage = baseDamage;
+        clone.damageMultiplier = damageMultiplier;
+        clone.damageAddition = damageAddition;
+        clone.isMult = isMult;
+        return clone;
+    }
 }

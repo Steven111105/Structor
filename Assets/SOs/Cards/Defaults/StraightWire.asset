@@ -15,6 +15,7 @@ MonoBehaviour:
   cardName: Straight Wire
   cardType: 0
   cardSprite: {fileID: -350556952, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  gridObjectSprite: {fileID: 758011740, guid: e2bc79d76d7a8a344bd78b50c6c163d4, type: 3}
   canRotate: 1
   baseDamage: 10
   damageMultiplier: 1

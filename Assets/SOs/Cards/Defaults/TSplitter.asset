@@ -15,6 +15,7 @@ MonoBehaviour:
   cardName: T-Splitter
   cardType: 2
   cardSprite: {fileID: -85935407, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  gridObjectSprite: {fileID: 846652720, guid: e2bc79d76d7a8a344bd78b50c6c163d4, type: 3}
   canRotate: 1
   baseDamage: 10
   damageMultiplier: 1

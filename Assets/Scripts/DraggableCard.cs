@@ -140,16 +140,16 @@ public class DraggableCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
                 switch (cardData.cardType)
                 {
                     case CardType.StraightWire:
-                        previewRenderer.sprite = gridManager.straightWireSprite;
+                        previewRenderer.sprite = cardData.gridObjectSprite;
                         break;
                     case CardType.BendWire:
-                        previewRenderer.sprite = gridManager.bendWireSprite;
+                        previewRenderer.sprite = cardData.gridObjectSprite;
                         break;
                     case CardType.TSplitter:
-                        previewRenderer.sprite = gridManager.tSplitterSprite;
+                        previewRenderer.sprite = cardData.gridObjectSprite;
                         break;
                     case CardType.Sensor:
-                        previewRenderer.sprite = gridManager.sensorSprite;
+                        previewRenderer.sprite = cardData.gridObjectSprite;
                         break;
                     default:
                         previewRenderer.sprite = cardData.cardSprite;

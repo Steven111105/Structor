@@ -15,9 +15,9 @@ MonoBehaviour:
   cardName: Sensor
   cardType: 4
   cardSprite: {fileID: -1738675557, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  gridObjectSprite: {fileID: -1796444063, guid: 243961e56118c0d46b13e31547241443, type: 3}
   canRotate: 0
   baseDamage: 20
-  sensorValue: 50
   damageMultiplier: 2
   damageAddition: 0
   isMult: 0
