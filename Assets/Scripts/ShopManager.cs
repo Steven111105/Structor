@@ -23,6 +23,8 @@ public class ShopManager : MonoBehaviour
     CardData component2;
     CardData booster1;
     CardData booster2;
+    bool hasBoughtHandUpgrade = false;
+    bool hasBoughtDiscardUpgrade = false;
 
     void Awake()
     {
@@ -64,7 +66,6 @@ public class ShopManager : MonoBehaviour
 
     private void SetupShopItems()
     {
-        // TODO: Implement shop item setup logic here
         // Randomize Component
         // Get the list of components from selected deck data, we randomize from the original
         // enable all items first
@@ -72,8 +73,14 @@ public class ShopManager : MonoBehaviour
         componentBuyButton2.transform.parent.gameObject.SetActive(true);
         boosterBuyButton1.transform.parent.gameObject.SetActive(true);
         boosterBuyButton2.transform.parent.gameObject.SetActive(true);
-        handUpgradeBuyButton.transform.parent.gameObject.SetActive(true);
-        discardUpgradeBuyButton.transform.parent.gameObject.SetActive(true);
+        if (hasBoughtHandUpgrade)
+            handUpgradeBuyButton.transform.parent.gameObject.SetActive(false);
+        else
+            handUpgradeBuyButton.transform.parent.gameObject.SetActive(true);
+        if (hasBoughtDiscardUpgrade)
+            discardUpgradeBuyButton.transform.parent.gameObject.SetActive(false);
+        else
+            discardUpgradeBuyButton.transform.parent.gameObject.SetActive(true);
 
         DeckConfiguration components = SelectedDeckData.instance.selectedDeck;
         int random1 = Random.Range(0, components.cardEntries.Length);
@@ -122,9 +129,15 @@ public class ShopManager : MonoBehaviour
         else if (panelIndex == 2) // Permanent Upgrade
         {
             if (buttonIndex == 0)
+            {
                 GameManager.instance.maxHandSize += 1;
+                hasBoughtHandUpgrade = true;
+            }
             else if (buttonIndex == 1)
+            {
                 GameManager.instance.maxDiscards += 1;
+                hasBoughtDiscardUpgrade = true;
+            }
             GameManager.instance.coins -= 10;
         }
 

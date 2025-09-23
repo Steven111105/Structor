@@ -94,6 +94,12 @@ public class ChooseDeckScript : MonoBehaviour
 
     public void PickDeck()
     {
+        if (PlayerPrefs.GetInt("hasSeenTutorial", 0) == 0)
+        {
+            TutorialManager.instance.OpenTutorial();
+            PlayerPrefs.SetInt("hasSeenTutorial", 1);
+            return;
+        }
         // Send current deck index to gamemanager
         SelectedDeckData.instance.selectedDeck = availableDecks[currentDeckIndex];
         SceneManager.LoadScene("Gameplay");

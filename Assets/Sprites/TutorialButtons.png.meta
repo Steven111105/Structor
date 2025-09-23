@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: cf0aff81e19cf624ba72ad4549e50251
+guid: bc3747f692526d9428ce05fd19ef2a28
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -123,13 +123,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Data_chip_and_energy_0
+      name: TutorialButtons_0
       rect:
         serializedVersion: 2
-        x: 6
-        y: 3
-        width: 240
-        height: 60
+        x: 0
+        y: 6
+        width: 928
+        height: 224
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,20 +137,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 06d5d8ebd957948458076133dfbee7d4
-      internalID: 317032529
+      spriteID: 1d7f7d6985a7f7347affbe3d3b3f8dff
+      internalID: 1105951709
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Data_chip_and_energy_1
+      name: TutorialButtons_1
       rect:
         serializedVersion: 2
-        x: 252
-        y: 4
-        width: 240
-        height: 60
+        x: 929
+        y: 150
+        width: 272
+        height: 80
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -158,8 +158,50 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 480294894e735224d84b309476e4bb92
-      internalID: -463038434
+      spriteID: 3f850ac3407a4824c98875e2efdacff1
+      internalID: -1550592303
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TutorialButtons_2
+      rect:
+        serializedVersion: 2
+        x: 929
+        y: 69
+        width: 272
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 70d94eae6072a4d4da84956bf4051df3
+      internalID: 1795869003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TutorialButtons_3
+      rect:
+        serializedVersion: 2
+        x: 929
+        y: 4
+        width: 232
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bdd270e84f7c7a941b70e75f8364029a
+      internalID: -269009154
       vertices: []
       indices: 
       edges: []
@@ -175,8 +217,10 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Data_chip_and_energy_0: 317032529
-      Data_chip_and_energy_1: -463038434
+      TutorialButtons_0: 1105951709
+      TutorialButtons_1: -1550592303
+      TutorialButtons_2: 1795869003
+      TutorialButtons_3: -269009154
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
