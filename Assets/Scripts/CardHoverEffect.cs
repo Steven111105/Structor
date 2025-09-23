@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System.Collections;
 
 // Add this component to card prefabs to enable hover animations
 public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -187,7 +188,7 @@ public class CardHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExit
         }
     }
     
-    private System.Collections.IEnumerator UpdateBasePositionAfterFrame()
+    private IEnumerator UpdateBasePositionAfterFrame()
     {
         yield return null; // Wait one frame for repositioning to complete
         

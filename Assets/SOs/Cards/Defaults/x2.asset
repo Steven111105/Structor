@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: x2
   cardType: 3
-  cardSprite: {fileID: -928137093, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  cardSprite: {fileID: 1977563200, guid: 3eced5aec5362f74daa3ec68ab854b5c, type: 3}
+  gridObjectSprite: {fileID: 0}
   canRotate: 0
   baseDamage: 20
   damageMultiplier: 2

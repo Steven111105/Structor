@@ -158,7 +158,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fd15ce70d18cc8545bcba8546b902cbc
+      spriteID: cde9ca4b4e702d142940b9c2aa351604
       internalID: -85935407
       vertices: []
       indices: 
@@ -179,7 +179,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0379742b5e5794c438d69451e452820f
+      spriteID: 7168e374be53a2c49a8e0b4fcde489c8
       internalID: -1898987228
       vertices: []
       indices: 
@@ -200,7 +200,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 82d1c74c37bad284f806f2074f7b0f2e
+      spriteID: da6be0bf238edb749a60b0b8b9991d75
       internalID: 940456836
       vertices: []
       indices: 
@@ -221,7 +221,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f961b7f0d1c860043a7d4ca59f226c13
+      spriteID: 24870a2bf4b46ce40a1ef9b182194382
       internalID: -350556952
       vertices: []
       indices: 
@@ -242,7 +242,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b7b03ae3e3cb65b43a69e648b6cfd7bc
+      spriteID: 3e2c0f8bbecedc6409cd7e42ea5e27d2
       internalID: -810485571
       vertices: []
       indices: 
@@ -263,7 +263,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 24bbdd8e457c08a40b08f9f601c901d7
+      spriteID: 7dce338bcabc3e2408266350b1ce791c
       internalID: 1116901470
       vertices: []
       indices: 
@@ -284,7 +284,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4cc419eef9c41e140a9bed96815f45ac
+      spriteID: 5868fc2a1f5fdf54b96097f57600c951
       internalID: -1738675557
       vertices: []
       indices: 
@@ -305,7 +305,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5b2b745033b685448a1cf7ccac83fad1
+      spriteID: 97d10f204d6456f42b6d0510083061ae
       internalID: 1977563200
       vertices: []
       indices: 
@@ -326,7 +326,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 621b3ff505edb1440a3f5316566005ec
+      spriteID: d4fa2f3520c009544a3ad81f6ba747a2
       internalID: -1152092373
       vertices: []
       indices: 
@@ -347,7 +347,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c58016dc74d9aba45af5e789c1d84b34
+      spriteID: 1ee83f938946ec94f936121fe631162d
       internalID: 100917342
       vertices: []
       indices: 
@@ -368,7 +368,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a97678e12c91b5a46970792ef6cc14df
+      spriteID: 979d77dfeffbded44b0ff1bf796d7643
       internalID: 751068129
       vertices: []
       indices: 
@@ -389,7 +389,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: be4e37117eb4bc24392562cd4c5da9f6
+      spriteID: 81f3eca347255604c8008f672cb1c397
       internalID: -928137093
       vertices: []
       indices: 
@@ -410,50 +410,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d6dd4ba093d7d2340b11d6ce606e6901
+      spriteID: 76f0a4e9864f0884499eab5e8ba22d71
       internalID: 518579142
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Cardst_14
-      rect:
-        serializedVersion: 2
-        x: 1134
-        y: 0
-        width: 81
-        height: 118
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: fb4a456e0512acb49b7137c2cbad55d4
-      internalID: 712653722
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Cardst_15
-      rect:
-        serializedVersion: 2
-        x: 1215
-        y: 0
-        width: 81
-        height: 118
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 41bb59c8e0c8bab4bae82679c5668258
-      internalID: -1623249719
       vertices: []
       indices: 
       edges: []
@@ -475,8 +433,6 @@ TextureImporter:
       Cardst_11: 751068129
       Cardst_12: -928137093
       Cardst_13: 518579142
-      Cardst_14: 712653722
-      Cardst_15: -1623249719
       Cardst_2: -1898987228
       Cardst_3: 940456836
       Cardst_4: -350556952

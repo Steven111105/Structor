@@ -288,7 +288,7 @@ public class GridManager : MonoBehaviour
 
     public IEnumerator ShowSuccessfulBeamPaths()
     {
-        float duration = 0.5f; // Duration to show each damage text
+        float duration = 0.25f; // Duration to show each damage text
         foreach (BeamPathTracker tracker in successfulBeamPaths)
         {
             Vector2Int[] path = tracker.path.ToArray();
@@ -315,7 +315,7 @@ public class GridManager : MonoBehaviour
 
         // Position it at the center of the grid cell
         textObj.transform.position = GridToWorldPosition(gridPos) + new Vector3(0, 0, -1); // Slightly in front
-        textObj.transform.localScale = Vector3.one * 0.003f; // Scale down for world space
+        textObj.transform.localScale = Vector3.one * 0.001f; // Scale down for world space
 
         TMP_Text text = textObj.AddComponent<TextMeshProUGUI>();
         Debug.Log($"Added TMP_Text component at {textObj.transform.position}");
@@ -335,7 +335,7 @@ public class GridManager : MonoBehaviour
     {
         float elapsed = 0f;
         Vector3 originalScale = text.transform.localScale;
-        Vector3 targetScale = new Vector3(0.01f, 0.01f, 0.01f); // Scale down to 1%
+        Vector3 targetScale = Vector3.one * 0.015f;
 
         while (elapsed < duration)
         {
@@ -381,6 +381,7 @@ public class GridManager : MonoBehaviour
     // Create Grid Objects
     public GridObject CreateGridObject(CardData cardData, Vector2Int position)
     {
+        if(!IsValidPosition(position)) return null;
         GameObject obj = Instantiate(gridObjectPrefab);
         obj.name = $"{cardData.cardName}_{position.x}_{position.y}";
 

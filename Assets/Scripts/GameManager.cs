@@ -28,6 +28,18 @@ public class GameManager : MonoBehaviour
     public TMP_Text moneyText;
     public Button attackButton;
     public TMP_Text debuffText;
+    public Transform discardPanel;
+
+    [Header("Chips Gained")]
+    public GameObject gainedChipsPanel;
+    public TMP_Text attackSavedLabel;
+    public TMP_Text attackSavedGain;
+    public TMP_Text damageSavedLabel;
+    public TMP_Text damageSavedGain;
+
+    [Header("Discard UI")]
+    public Sprite countOn;
+    public Sprite countOff;
 
     public GameObject battlePanel;
     public GameObject gameOverPanel;
@@ -124,14 +136,17 @@ public class GameManager : MonoBehaviour
             case 0: // Small
                 tierMultiplier = 1.0f;
                 debuffText.text = "";
+                debuffText.transform.parent.gameObject.SetActive(false);
                 break;
             case 1: // Medium
                 tierMultiplier = 1.5f;
                 debuffText.text = "";
+                debuffText.transform.parent.gameObject.SetActive(false);
                 break;
             case 2: // Large
                 tierMultiplier = 2f;
                 SetDebuff();
+                debuffText.transform.parent.gameObject.SetActive(true);
                 break;
             default:
                 tierMultiplier = 1.0f;
@@ -186,7 +201,7 @@ public class GameManager : MonoBehaviour
     {
         if (attackCounterText != null)
         {
-            attackCounterText.text = $"Attacks: {currentAttack}/{maxAttacks}";
+            attackCounterText.text = $"Attacks:\n{currentAttack}/{maxAttacks}";
         }
 
         if (damageCounterText != null)
@@ -197,6 +212,7 @@ public class GameManager : MonoBehaviour
         if (discardCounterText != null)
         {
             discardCounterText.text = $"Discards: {currentDiscards}/{maxDiscards}";
+            UpdateDiscardUI();
         }
 
         // Update button states
@@ -272,14 +288,13 @@ public class GameManager : MonoBehaviour
         yield return null;
     }
 
-    public void ShowAttackPreview()
+    void UpdateDiscardUI()
     {
-        if (!gameActive || currentAttack >= maxAttacks)
+        for (int i = 0; i < maxDiscards; i++)
         {
-            return;
+            discardPanel.GetChild(i).gameObject.SetActive(true);
+            discardPanel.GetChild(i).GetComponent<Image>().sprite = (i < currentDiscards) ? countOff : countOn;
         }
-
-        
     }
 
     public void NextTurn()
@@ -343,10 +358,12 @@ public class GameManager : MonoBehaviour
         levelIndex++;
 
         CalculateMoneyGained();
-        Invoke(nameof(OpenShop), 1f);
-        SFXManager.instance.FadeToShopBGM();
+        ShowChipsGained();
+        // Invoke(nameof(OpenShop), 1f);
+        
     }
 
+    int extraEnergyGain = 0;
     void CalculateMoneyGained()
     {
         int coinsEarned = 0;
@@ -355,9 +372,11 @@ public class GameManager : MonoBehaviour
         int extraQuota = totalDamageDealt - damageQuota;
         int threshold = 20;
 
+        extraEnergyGain = 0;
         while (extraQuota >= threshold)
         {
             coinsEarned += 1;
+            extraEnergyGain++;
             extraQuota -= threshold;
             threshold *= 3;
         }
@@ -368,11 +387,20 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Coins earned: {coinsEarned} ({(maxAttacks - currentAttack) * 2} from attack), Total coins: {coins}");
     }
 
-    void OpenShop()
+    void ShowChipsGained()
     {
+        gainedChipsPanel.transform.parent.gameObject.SetActive(true);
+        attackSavedLabel.text = $"Attack Saved: {maxAttacks - currentAttack}";
+        damageSavedLabel.text = $"Extra Energy: {totalDamageDealt - damageQuota}";
+        attackSavedGain.text = ((maxAttacks - currentAttack) * 2).ToString();
+        damageSavedGain.text = extraEnergyGain.ToString();
+    }
+
+    public void OpenShop()
+    {
+        SFXManager.instance.FadeToShopBGM();
         ShopManager.instance.ShowShopPanel();
         gameOverPanel.SetActive(false);
-
         ResetRound();
     }
 
@@ -384,6 +412,7 @@ public class GameManager : MonoBehaviour
         currentAttack = 0;
         currentDiscards = 0;
         GridManager.instance.ClearGridObjects();
+        gainedChipsPanel.transform.parent.gameObject.SetActive(false);
     }
 
     public void DiscardCard()
