@@ -36,6 +36,8 @@ public class GameManager : MonoBehaviour
     public TMP_Text attackSavedGain;
     public TMP_Text damageSavedLabel;
     public TMP_Text damageSavedGain;
+    public TMP_Text totalGainLabel;
+    public TMP_Text totalGainText;
 
     [Header("Discard UI")]
     public Sprite countOn;
@@ -78,6 +80,7 @@ public class GameManager : MonoBehaviour
         gameActive = true;
         // Start with battle
         CardManager.instance.InitializeDeck();
+        gainedChipsPanel.transform.parent.gameObject.SetActive(false);
         InitializeBattle();
     }
 
@@ -389,11 +392,18 @@ public class GameManager : MonoBehaviour
 
     void ShowChipsGained()
     {
+        int attackGain = (maxAttacks - currentAttack) * 2;
+        int totalGained = attackGain + extraEnergyGain;
+
         gainedChipsPanel.transform.parent.gameObject.SetActive(true);
         attackSavedLabel.text = $"Attack Saved: {maxAttacks - currentAttack}";
+        attackSavedGain.text = attackGain.ToString();
+        
         damageSavedLabel.text = $"Extra Energy: {totalDamageDealt - damageQuota}";
-        attackSavedGain.text = ((maxAttacks - currentAttack) * 2).ToString();
         damageSavedGain.text = extraEnergyGain.ToString();
+
+        totalGainLabel.text = "Total Chips Gained:";
+        totalGainText.text = totalGained.ToString();
     }
 
     public void OpenShop()
