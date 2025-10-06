@@ -1,14 +1,14 @@
-## About
+## ℹ️ About
 Structor is a 2D pixel art strategy builder game where the player needs to build a circuit with a set amount of cards. In the game, player are tasked to keep up with increasing quotas by buying different cards, getting upgrades, and strategizing the wire configuration that will yield the highest points.
 
-## Controls
+## 🎮 Controls
 Drag cards into the grid to place down tiles
 
 Press the attack button (on the left) to fire beams from CPUs.
 
 Drag cards into the discard (on the right) to trash the card, then press the discard to get new cards.
 
-##  Scripts
+##  📜 Scripts
 
 |  Scripts | Description |
 | --- | --- |
@@ -29,7 +29,7 @@ Drag cards into the discard (on the right) to trash the card, then press the dis
 |`CardData.cs`| Contains card type, damage numbers, and booster number. This SO is also used in `GridObject.cs` as the base data, and for each object we copy the SO data and create a new instance so we can have seperate data per grid object|
 |`DeckConfiguration.cs`| `DeckConfiguration.cs` is a list of `CardData.cs` which is the startinng deck. This SO contains the name and description of each deck, along with data for what type of object will be in the middle of the grid on the start of the game.|
 
-## Contributors
+## 👤 Contributors
 Nhoel M. K. D. Goei - Game Designer
 
 Steven Wijaya (Me) - Game Programmer
