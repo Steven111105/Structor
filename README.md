@@ -1,4 +1,14 @@
-<img width="100%" alt="486676140-2071763e-3804-45ee-ba17-01b417498cbf" src="https://github.com/user-attachments/assets/5a67469b-48c4-4cc0-b184-270ea834b0f7" />
+<table width="100%">
+  <tr>
+    <td width="50%">
+      <img width="100%" alt="486676140-2071763e-3804-45ee-ba17-01b417498cbf" src="https://github.com/user-attachments/assets/2bf6ccfc-a5f2-4568-9cc1-fe00ff61694e" />
+      <img width="100%" alt="486676140-2071763e-3804-45ee-ba17-01b417498cbf" src="https://github.com/user-attachments/assets/ad21ca94-69e0-4476-97a9-7c6e21696ecd" />
+    </td>
+    <td width="50%">
+      <img width="100%" alt="486676140-2071763e-3804-45ee-ba17-01b417498cbf" src="https://github.com/user-attachments/assets/1b0dbd79-0b9b-4580-8640-670d612110fc" />
+      <img width="100%" alt="486676140-2071763e-3804-45ee-ba17-01b417498cbf" src="https://github.com/user-attachments/assets/25ced21e-fafd-4691-aeae-e7de8d338e74" />
+    </td>
+</table>
 
 ## ℹ️ About
 Structor is a 2D pixel art strategy builder game where the player needs to build a circuit with a set amount of cards. In the game, player are tasked to keep up with increasing quotas by buying different cards, getting upgrades, and strategizing the wire configuration that will yield the highest points.
